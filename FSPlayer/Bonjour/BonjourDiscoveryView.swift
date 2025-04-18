@@ -1,10 +1,3 @@
-//
-//  BonjourDiscoveryView.swift
-//  FSPlayer
-//
-//  Created by Alexander Bralnin on 18.04.2025.
-//
-
 import SwiftUI
 
 @available(macOS 12.0, iOS 15.0, *)
@@ -86,8 +79,6 @@ struct BonjourDiscoveryView: View {
                 ForEach(controller.discoveredServices) { service in
                     ServiceRow(
                         service: service,
-                        resolved: controller.resolvedServices[service.id],
-                        error: controller.resolvingErrors[service.id],
                         onTap: {
                             handleServiceTap(service)
                         }
@@ -104,11 +95,11 @@ struct BonjourDiscoveryView: View {
         .cornerRadius(10)
     }
     
-    private func handleServiceTap(_ service: BonjourDiscoveryService.DiscoveredService) {
-        if controller.resolvedServices[service.id] != nil {
-            controller.selectServer(with: service.id)
-        } else if controller.resolvingErrors[service.id] == nil {
-            controller.resolveService(service)
+    private func handleServiceTap(_ service: MediaFSBrowser.DiscoveredService) {
+        if service.isResolved {
+            controller.selectServer(service)
         }
+        // Не нужно явно вызывать resolveService,
+        // так как это теперь происходит автоматически в MediaFSBrowser
     }
 }

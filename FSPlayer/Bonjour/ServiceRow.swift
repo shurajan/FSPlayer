@@ -1,17 +1,8 @@
-//
-//  ServiceRow.swift
-//  FSPlayer
-//
-//  Created by Alexander Bralnin on 18.04.2025.
-//
-
 import SwiftUI
 
 @available(macOS 12.0, iOS 15.0, *)
 struct ServiceRow: View {
-    let service: BonjourDiscoveryService.DiscoveredService
-    let resolved: (hostname: String, port: Int)?
-    let error: String?
+    let service: MediaFSBrowser.DiscoveredService
     let onTap: () -> Void
     
     var body: some View {
@@ -33,28 +24,16 @@ struct ServiceRow: View {
     
     @ViewBuilder
     private var statusView: some View {
-        if let resolved = resolved {
+        if service.isResolved, let hostname = service.hostname, let port = service.port {
             // Если сервис успешно разрешен
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.green)
                     .font(.caption)
                 
-                Text("\(resolved.hostname):\(resolved.port)")
+                Text("\(hostname):\(port)")
                     .font(.subheadline)
                     .foregroundColor(.blue)
-            }
-            .padding(.top, 2)
-        } else if let error = error {
-            // Если произошла ошибка при разрешении
-            HStack(spacing: 4) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.orange)
-                    .font(.caption)
-                
-                Text("Ошибка: \(error)")
-                    .font(.caption)
-                    .foregroundColor(.red)
             }
             .padding(.top, 2)
         } else {
@@ -63,7 +42,7 @@ struct ServiceRow: View {
                 ProgressView()
                     .scaleEffect(0.7)
                 
-                Text("Нажмите для получения адреса...")
+                Text("Получение адреса...")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
