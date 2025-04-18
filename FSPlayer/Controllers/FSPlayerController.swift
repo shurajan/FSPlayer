@@ -18,6 +18,7 @@ enum AppError: Equatable {
 final class FSPlayerController: ObservableObject {
 
     @Published private(set) var state: State = .idle
+    @Published private(set) var token: String? = KeychainTokenService.shared.loadAPIToken()
 
     enum State: Equatable{
         case idle
@@ -71,10 +72,19 @@ final class FSPlayerController: ObservableObject {
     }
 
     private func handleLogin(for host: String, password: String) async {
+        if let token  {
+            print(token)
+        }
+        
         let result = await AuthService.shared.login(host: host, password: password)
         
         switch result {
-        case .success:
+        case .success(let newToken):
+            if KeychainTokenService.shared.saveAPIToken(newToken) {
+                token = newToken
+            } else {
+                send(.loginFailed("Faield to save token"))
+            }
             send(.loginSucceeded)
         case .failure(let error):
             send(.loginFailed(error.localizedDescription))
