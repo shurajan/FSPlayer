@@ -22,12 +22,7 @@ struct ManualEntryView: View {
         VStack(spacing: 20) {
             TextField("Введите IP или имя хоста", text: $host)
                 .textFieldStyle(.roundedBorder)
-            
-            Button("Найти в локальной сети") {
-                showingBonjourDiscovery = true
-            }
-            .buttonStyle(.bordered)
-            
+        
             Button("Продолжить") {
                 controller.send(.hostEntered(host))
             }
@@ -35,11 +30,5 @@ struct ManualEntryView: View {
             .buttonStyle(.borderedProminent)
         }
         .padding()
-        .sheet(isPresented: $showingBonjourDiscovery) {
-            BonjourDiscoveryView(
-                controller: BonjourDiscoveryController(),
-                selectedHostname: $host
-            )
-        }
     }
 }
