@@ -7,50 +7,53 @@
 
 import SwiftUI
 
-struct FSPlayerView: View {
-    @StateObject var controller = FSPlayerController()
-
-    var body: some View {
-        switch controller.state {
-        case .idle:
-            Color.clear
-                .onAppear {
-                    controller.send(.start)
-                }
-
-        case .manualEntry:
-            ManualEntryView()
-                .environmentObject(controller)
-
-        case .needLogin(let host):
-            LoginView(host: host)
-                .environmentObject(controller)
-
-        case .loading:
-            ProgressView("Logging in...")
-                .progressViewStyle(CircularProgressViewStyle())
-
-        case .error(let error):
-            VStack(spacing: 16) {
-                switch error {
-                case .authentication(let msg), .general(let msg):
-                    Text("Error: \(msg)").foregroundColor(.red)
-                }
-                Button("Try Again") {
-                    controller.send(.cancel)
-                }
-            }
-
-        case .success:
-            Text("🎉 Welcome to FSPlayer!")
-                .font(.largeTitle)
-
-        case .fileList:
-            FileListView()
-                .environmentObject(controller)
-        }
-    }
+enum NavigationDestination {
+    case login
+    case filesList
+    case player
 }
 
+struct FSPlayerView: View {
+    @State private var navigationPath = [NavigationDestination]()
+    @StateObject private var session = SessionViewModel()
+    
+    var body: some View {
+        NavigationStack(path: $navigationPath) {
 
-
+            LoginView(navigationPath: $navigationPath)
+                .environmentObject(session)
+                .navigationDestination(for: NavigationDestination.self) { destination in
+                    switch destination {
+                    case .login:
+                        LoginView(navigationPath: $navigationPath)
+                            .environmentObject(session)
+                    case .filesList:
+                        MediaListView(navigationPath: $navigationPath)
+                            .environmentObject(session)
+                    case .player:
+                        playerView
+                    }
+                }
+        }
+    }
+    
+    // Экран плеера
+    private var playerView: some View {
+        VStack(spacing: 20) {
+            Text("Player Screen")
+                .font(.title)
+            
+            Button("Back to Files") {
+                navigationPath.removeLast()
+            }
+            .buttonStyle(.bordered)
+            
+            Button("Back to Login") {
+                navigationPath = []
+            }
+            .buttonStyle(.bordered)
+        }
+        .navigationTitle("Player")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}

@@ -26,7 +26,7 @@ struct HostAndPortInputView: View {
             _port = State(initialValue: components[1])
         } else {
             _host = State(initialValue: host.wrappedValue)
-            _port = State(initialValue: "8000") // Значение по умолчанию
+            _port = State(initialValue: "8000")
         }
     }
 

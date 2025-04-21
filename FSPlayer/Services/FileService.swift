@@ -50,6 +50,7 @@ enum FileServiceError: LocalizedError {
 
 protocol FileServiceProtocol {
     func fetchFiles(host: String, token: String) async -> Result<[FileItem], Error>
+    func deleteFile(name: String, host: String, token: String) async -> Result<Void, Error>
 }
 
 // MARK: - Service Implementation
@@ -107,4 +108,44 @@ final class FileService: FileServiceProtocol {
             return .failure(FileServiceError.networkError(message: "Network request failed: \(error.localizedDescription)"))
         }
     }
+    
+    func deleteFile(name: String, host: String, token: String) async -> Result<Void, Error> {
+        guard !token.isEmpty else {
+            return .failure(FileServiceError.invalidToken(message: "Authorization token is empty"))
+        }
+
+        // URL-encode имя файла для безопасного использования в URL
+        guard let encodedName = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "http://\(host)/files/\(encodedName)") else {
+            return .failure(FileServiceError.networkError(message: "Invalid URL for file: \(name)"))
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("*/*", forHTTPHeaderField: "Accept")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return .failure(FileServiceError.invalidResponse(message: "Invalid response format"))
+            }
+
+            switch httpResponse.statusCode {
+            case 200:
+                return .success(())
+            case 401:
+                return .failure(FileServiceError.invalidToken(message: "Authorization failed: Invalid or expired token"))
+            default:
+                if let errorMessage = String(data: data, encoding: .utf8) {
+                    return .failure(FileServiceError.serverError(message: "Server error (\(httpResponse.statusCode)): \(errorMessage)"))
+                } else {
+                    return .failure(FileServiceError.serverError(message: "Server error: HTTP \(httpResponse.statusCode)"))
+                }
+            }
+        } catch {
+            return .failure(FileServiceError.networkError(message: "Network request failed: \(error.localizedDescription)"))
+        }
+    }
+    
 }
