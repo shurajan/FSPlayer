@@ -62,7 +62,6 @@ final class VideoPlayerViewModel: ObservableObject {
 
         self.player = player
 
-        // Save position when user pauses
         player.publisher(for: \.timeControlStatus)
             .filter { $0 == .paused }
             .sink { [weak self] _ in
@@ -70,7 +69,6 @@ final class VideoPlayerViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Reset position if playback reaches end
         NotificationCenter.default.publisher(
             for: .AVPlayerItemDidPlayToEndTime,
             object: player.currentItem
@@ -92,7 +90,6 @@ final class VideoPlayerViewModel: ObservableObject {
         else { return }
 
         let duration = item.duration.seconds
-        // If we're within 3 seconds of the end, clear instead of saving
         if duration.isFinite, duration - seconds < 3 {
             resetPosition()
         } else {
@@ -110,10 +107,7 @@ final class VideoPlayerViewModel: ObservableObject {
     }
 
     func cleanup() {
-        // Pause → triggers saveCurrentPosition() via KVO
         player?.pause()
-
-        // Tear down player & subscriptions
         cancellables.forEach { $0.cancel() }
         cancellables.removeAll()
         player?.replaceCurrentItem(with: nil)

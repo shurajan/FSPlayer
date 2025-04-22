@@ -25,6 +25,7 @@ final class LoginViewModel: ObservableObject {
     func login(session: SessionStorage) async {
         errorMessage = nil
         isLoading    = true
+        didLogin = false
         defer { isLoading = false }
 
         session.host = host
