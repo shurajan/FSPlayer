@@ -8,6 +8,7 @@
 import Foundation
 import Security
 
+@MainActor
 final class KeychainTokenService {
     static let shared = KeychainTokenService()
     

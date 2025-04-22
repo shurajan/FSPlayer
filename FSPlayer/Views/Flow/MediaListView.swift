@@ -10,11 +10,12 @@ struct MediaListView: View {
     @State private var sortOption: SortOption = .name
     @State private var fileToDelete: FileItem?
     @State private var showDeleteConfirmation = false
+    @State private var selectedFile: FileItem?
 
     enum SortOption: String, CaseIterable, Identifiable {
         case name = "Name"
         case size = "Size"
-        case resolution = "Resolution"
+        case duration = "Duration"
 
         var id: String { rawValue }
     }
@@ -25,10 +26,8 @@ struct MediaListView: View {
             return files.sorted { $0.name.lowercased() < $1.name.lowercased() }
         case .size:
             return files.sorted { $0.size > $1.size }
-        case .resolution:
-            return files.sorted {
-                ($0.resolution ?? "").localizedStandardCompare($1.resolution ?? "") == .orderedAscending
-            }
+        case .duration:
+            return files.sorted { ($0.duration ?? -1) > ($1.duration ?? -1) }
         }
     }
 
@@ -82,13 +81,26 @@ struct MediaListView: View {
                                         .foregroundStyle(.secondary)
                                 }
 
-                                if let resolution = file.resolution {
-                                    Text("📺 \(resolution)")
-                                        .font(.caption)
-                                        .foregroundStyle(.gray)
+                                HStack(alignment: .center) {
+                                    if let resolution = file.resolution {
+                                        Text("📺 \(resolution)")
+                                            .font(.caption)
+                                            .foregroundStyle(.gray)
+                                    }
+                                    
+                                    if let formatedDuration = file.formattedDuration {
+                                        Text(formatedDuration)
+                                            .font(.caption)
+                                            .foregroundStyle(.gray)
+                                    }
                                 }
+                                
                             }
                             .padding(.vertical, 4)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedFile = file
+                            }
                             .swipeActions {
                                 Button(role: .destructive) {
                                     fileToDelete = file
@@ -131,6 +143,10 @@ struct MediaListView: View {
         }
         .task {
             await loadFiles()
+        }
+        .fullScreenCover(item: $selectedFile) { file in
+            VideoPlayerView(file: file, session: session)
+                .environmentObject(session)
         }
     }
 

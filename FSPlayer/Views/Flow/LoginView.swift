@@ -8,11 +8,12 @@ import SwiftUI
 
 struct LoginView: View {
     @Binding var navigationPath: [NavigationDestination]
+    @EnvironmentObject var session: SessionViewModel
+    
     @State private var host: String = StorageService.shared.loadHost() ?? ""
     @State private var password: String = ""
     @State private var errorMessage: String?
     @State private var isLoading: Bool = false
-    @EnvironmentObject var session: SessionViewModel
 
     var body: some View {
         VStack {

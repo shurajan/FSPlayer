@@ -38,6 +38,7 @@ struct AuthErrorResponse: Decodable {
     let error: String
 }
 
+@MainActor
 final class AuthService: AuthServiceProtocol {
     static let shared = AuthService()
     
