@@ -9,7 +9,6 @@ import SwiftUI
 
 import SwiftUI
 
-@available(macOS 12.0, iOS 15.0, *)
 struct HostAndPortInputView: View {
     @Binding private var combinedHost: String
 
@@ -32,7 +31,7 @@ struct HostAndPortInputView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            TextField("Введите IP или имя хоста", text: $host)
+            TextField("IP or hostname", text: $host)
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.asciiCapable)
                 .autocorrectionDisabled(true)
@@ -49,7 +48,7 @@ struct HostAndPortInputView: View {
                     updateCombined()
                 }
 
-            TextField("Введите порт", text: $port)
+            TextField("Port", text: $port)
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.numberPad)
                 .onChange(of: port) {
@@ -64,7 +63,7 @@ struct HostAndPortInputView: View {
 
     private func updateCombined() {
         guard !host.isEmpty, !port.isEmpty else {
-            combinedHost = host // или "", если нужно очищать
+            combinedHost = host
             return
         }
         combinedHost = "\(host):\(port)"

@@ -15,7 +15,7 @@ enum NavigationDestination {
 
 struct FSPlayerView: View {
     @State private var navigationPath = [NavigationDestination]()
-    @StateObject private var session = SessionViewModel()
+    @StateObject private var session = SessionStorage()
     
     var body: some View {
         NavigationStack(path: $navigationPath) {

@@ -11,14 +11,14 @@ import AVKit
 struct VideoPlayerView: View {
     let file: FileItem
 
-    @EnvironmentObject private var session: SessionViewModel
+    @EnvironmentObject private var session: SessionStorage
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel: VideoPlayerViewModel
     @State private var dragOffset: CGSize = .zero
     @GestureState private var isDragging = false
 
-    init(file: FileItem, session: SessionViewModel) {
+    init(file: FileItem, session: SessionStorage) {
         self.file = file
         _viewModel = StateObject(
             wrappedValue: VideoPlayerViewModel(file: file, session: session)
@@ -46,7 +46,7 @@ struct VideoPlayerView: View {
                 Text(error)
                     .padding()
             } else {
-                ProgressView("Загружаем видео…")
+                ProgressView("Loading…")
                     .progressViewStyle(.circular)
             }
         }

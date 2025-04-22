@@ -9,7 +9,7 @@ import Foundation
 
 enum UserDefaultsKey: String, CaseIterable {
     case host = "host"
-    case videoPosition = "video_position" // Базовый ключ для хранения позиций видео
+    case videoPosition = "video_position"
     
     var key: String {
         let bundleID = Bundle.main.bundleIdentifier ?? "com.bralnin.fsplayer"
@@ -22,8 +22,8 @@ enum UserDefaultsKey: String, CaseIterable {
 }
 
 @MainActor
-final class StorageService {
-    static let shared = StorageService()
+final class UserDataStorageService {
+    static let shared = UserDataStorageService()
 
     private let defaults: UserDefaults
 

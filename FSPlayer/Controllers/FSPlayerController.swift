@@ -44,7 +44,7 @@ final class FSPlayerController: ObservableObject {
         case filesFetchFailed(String)
     }
     
-    private(set) var currentHost: String? = StorageService.shared.loadHost()
+    private(set) var currentHost: String? = UserDataStorageService.shared.loadHost()
     private var password: String = ""
     
     func send(_ event: Event) {

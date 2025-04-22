@@ -8,12 +8,12 @@
 import Foundation
 
 @MainActor
-final class SessionViewModel: ObservableObject {
+final class SessionStorage: ObservableObject {
     @Published var token: String?
     @Published var host: String?
 
     init() {
-        self.host = StorageService.shared.loadHost()
+        self.host = UserDataStorageService.shared.loadHost()
         self.token = KeychainTokenService.shared.loadAPIToken()
     }
 
