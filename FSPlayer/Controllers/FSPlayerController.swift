@@ -122,7 +122,7 @@ final class FSPlayerController: ObservableObject {
             return
         }
         
-        let result = await FileService.shared.fetchFiles(host: host, token: token)
+        let result = await VideoService.shared.fetchFiles(host: host, token: token)
         
         switch result {
         case .success(let fileItems):

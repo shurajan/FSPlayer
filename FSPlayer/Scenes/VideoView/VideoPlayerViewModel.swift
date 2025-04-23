@@ -33,35 +33,36 @@ final class VideoPlayerViewModel: ObservableObject {
             let host  = session.host,
             let token = session.token
         else {
-            errorMessage = "Token or host is empty"
+            errorMessage = "Missing host or token"
             return
         }
 
-        let urlString = "http://\(host)/files/\(file.name)"
+        let urlString = "http://\(host)\(file.hlsURL)"
         guard let url = URL(string: urlString) else {
-            errorMessage = "Incrorrect URL: \(urlString)"
+            errorMessage = "Invalid URL: \(urlString)"
             return
         }
 
+        // Inject Authorization header for HLS playlist + segments
         let headers  = ["Authorization": "Bearer \(token)"]
         let options: [String: Any] = ["AVURLAssetHTTPHeaderFieldsKey": headers]
 
-        let asset = AVURLAsset(url: url, options: options)
-        let item  = AVPlayerItem(asset: asset)
+        let asset  = AVURLAsset(url: url, options: options)
+        let item   = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: item)
         player.allowsExternalPlayback = false
 
-        // Restore saved playback position
-        if let savedSeconds = UserDataStorageService.shared
-                                .loadVideoPosition(for: file.id),
+        // Restore playback position
+        if let savedSeconds = UserDataStorageService.shared.loadVideoPosition(for: file.id),
            savedSeconds > 0
         {
-            let savedTime = CMTime(seconds: savedSeconds, preferredTimescale: 600)
-            player.seek(to: savedTime, toleranceBefore: .zero, toleranceAfter: .zero)
+            let time = CMTime(seconds: savedSeconds, preferredTimescale: 600)
+            player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
         }
 
         self.player = player
 
+        // Save position when paused
         player.publisher(for: \.timeControlStatus)
             .filter { $0 == .paused }
             .sink { [weak self] _ in
@@ -69,6 +70,7 @@ final class VideoPlayerViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Reset position on end
         NotificationCenter.default.publisher(
             for: .AVPlayerItemDidPlayToEndTime,
             object: player.currentItem
@@ -83,11 +85,11 @@ final class VideoPlayerViewModel: ObservableObject {
     private func saveCurrentPosition() {
         guard
             let player = player,
-            let item   = player.currentItem,
-            let seconds = player.currentTime().seconds.isFinite
-                          ? player.currentTime().seconds
-                          : nil
+            let item = player.currentItem
         else { return }
+
+        let seconds = player.currentTime().seconds
+        guard seconds.isFinite else { return }
 
         let duration = item.duration.seconds
         if duration.isFinite, duration - seconds < 3 {

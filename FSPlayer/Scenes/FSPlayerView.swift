@@ -28,7 +28,7 @@ struct FSPlayerView: View {
                         LoginView(navigationPath: $navigationPath)
                             .environmentObject(session)
                     case .filesList:
-                        MediaListView(navigationPath: $navigationPath)
+                        VideoListView(navigationPath: $navigationPath)
                             .environmentObject(session)
                     case .player:
                         playerView

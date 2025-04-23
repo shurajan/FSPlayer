@@ -1,17 +1,17 @@
 import SwiftUI
 
-struct MediaListView: View {
+struct VideoListView: View {
     // Внешние зависимости
     @EnvironmentObject private var session: SessionStorage
     @Binding        var navigationPath: [NavigationDestination]
 
     // ViewModel
-    @StateObject private var viewModel = MediaListViewModel()
+    @StateObject private var viewModel = VideoListViewModel()
 
     var body: some View {
         VStack {
             if viewModel.isLoading {
-                ProgressView("Loading files…")
+                ProgressView("Loading videos…")
                     .padding()
             }
 
@@ -44,7 +44,7 @@ struct MediaListView: View {
                 }
             }
         }
-        .alert("Delete File?",
+        .alert("Delete Video?",
                isPresented: $viewModel.showDeleteConfirmation,
                presenting: viewModel.fileToDelete) { file in
             Button("Delete", role: .destructive) {
@@ -63,7 +63,7 @@ struct MediaListView: View {
 }
 
 // MARK: ‑ Private subviews & helpers
-private extension MediaListView {
+private extension VideoListView {
     var content: some View {
         VStack(spacing: 10) {
             // Сортировка
@@ -71,7 +71,7 @@ private extension MediaListView {
                 Text("Sort by:")
                     .font(.subheadline)
                 Picker("Sort", selection: $viewModel.sortOption) {
-                    ForEach(MediaListViewModel.SortOption.allCases) { option in
+                    ForEach(VideoListViewModel.SortOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }
@@ -81,7 +81,7 @@ private extension MediaListView {
 
             // Список файлов
             List {
-                ForEach(viewModel.sortedFiles) { file in
+                ForEach(viewModel.sortedFiles, id: \.id) { file in
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Text(file.name)
@@ -89,23 +89,6 @@ private extension MediaListView {
                                 .lineLimit(1)
 
                             Spacer()
-
-                            Text(viewModel.formatSize(file.size))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        HStack {
-                            if let res = file.resolution {
-                                Text("📺 \(res)")
-                                    .font(.caption)
-                                    .foregroundStyle(.gray)
-                            }
-                            if let dur = file.formattedDuration {
-                                Text(dur)
-                                    .font(.caption)
-                                    .foregroundStyle(.gray)
-                            }
                         }
                     }
                     .padding(.vertical, 4)
