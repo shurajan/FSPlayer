@@ -8,60 +8,86 @@
 import SwiftUI
 
 struct VideoItemView: View {
-    let file: VideoItemModel
-
+    let video: VideoItemModel
+    let onSelect: (VideoItemModel, String) -> Void
+    @State private var selectedPlaylist: String = "default"
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Название + разрешение
-            HStack {
-                Text(file.name)
-                    .font(.headline)
-                    .lineLimit(1)
-
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(video.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                    
+                    HStack(spacing: 8) {
+                        if let duration = video.duration {
+                            Text(formatDuration(duration))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        if let resolution = video.resolution {
+                            Text(resolution)
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.gray.opacity(0.15))
+                                .cornerRadius(5)
+                        }
+                        
+                        if let size = video.sizeMB {
+                            Label("\(formatSize(size))", systemImage: "externaldrive")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        if let created = video.createdAt,
+                           let date = ISO8601DateFormatter().date(from: created) {
+                            Label(date.formatted(date: .numeric, time: .shortened),
+                                  systemImage: "calendar")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
                 Spacer()
 
-                if let resolution = file.resolution {
-                    Text(resolution)
-                        .font(.caption)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(6)
-                }
-            }
-
-            // Длительность
-            if let duration = file.duration {
-                Text(formatDuration(duration))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            // Размер и дата
-            HStack(spacing: 16) {
-                if let size = file.sizeMB {
-                    Label("\(formatSize(size))", systemImage: "externaldrive")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let created = file.createdAt,
-                   let date = ISO8601DateFormatter().date(from: created) {
-                    Label(date.formatted(date: .numeric, time: .shortened),
-                          systemImage: "calendar")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    PlaylistPicker(
+                        selectedPlaylist: $selectedPlaylist,
+                        playlists: video.clips ?? []
+                    )
+                    .font(.caption)
+                    
+                    Button(action: {
+                        onSelect(video, selectedPlaylist)
+                    }) {
+                        Image(systemName: "play.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .padding(16)
+                            .background(Color.blue.opacity(0.15))
+                            .foregroundColor(.blue)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
                 }
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Color(UIColor.secondarySystemBackground))
+        .cornerRadius(12)
     }
-
+    
     private func formatDuration(_ seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
         let secs = seconds % 60
-
+        
         if hours > 0 {
             return String(format: "%d:%02d:%02d", hours, minutes, secs)
         } else {
@@ -71,7 +97,7 @@ struct VideoItemView: View {
     
     func formatSize(_ sizeInMB: Int) -> String {
         let size = Double(sizeInMB)
-
+        
         switch size {
         case 0..<1:
             return "<1 MB"

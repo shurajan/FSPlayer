@@ -16,13 +16,13 @@ final class VideoPlayerViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     // MARK: – Dependencies & state
-    private let file: VideoItemModel
+    private let selectedVideo: SelectedVideoItem
     private unowned let session: SessionStorage
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: – Init
-    init(file: VideoItemModel, session: SessionStorage) {
-        self.file    = file
+    init(selectedVideo: SelectedVideoItem, session: SessionStorage) {
+        self.selectedVideo = selectedVideo
         self.session = session
         configurePlayer()
     }
@@ -37,7 +37,9 @@ final class VideoPlayerViewModel: ObservableObject {
             return
         }
 
-        let urlString = "http://\(host)\(file.hlsURL)"
+        let playlist = selectedVideo.hlsPathWithPlaylist()
+        
+        let urlString = "http://\(host)\(playlist)"
         guard let url = URL(string: urlString) else {
             errorMessage = "Invalid URL: \(urlString)"
             return
@@ -53,7 +55,7 @@ final class VideoPlayerViewModel: ObservableObject {
         player.allowsExternalPlayback = false
 
         // Restore playback position
-        if let savedSeconds = UserDataStorageService.shared.loadVideoPosition(for: file.id),
+        if let savedSeconds = UserDataStorageService.shared.loadVideoPosition(for: selectedVideo.id),
            savedSeconds > 0
         {
             let time = CMTime(seconds: savedSeconds, preferredTimescale: 600)
@@ -95,12 +97,12 @@ final class VideoPlayerViewModel: ObservableObject {
         if duration.isFinite, duration - seconds < 3 {
             resetPosition()
         } else {
-            UserDataStorageService.shared.saveVideoPosition(seconds, for: file.id)
+            UserDataStorageService.shared.saveVideoPosition(seconds, for: selectedVideo.id)
         }
     }
 
     private func resetPosition() {
-        UserDataStorageService.shared.clearVideoPosition(for: file.id)
+        UserDataStorageService.shared.clearVideoPosition(for: selectedVideo.id)
     }
 
     // MARK: – Public controls

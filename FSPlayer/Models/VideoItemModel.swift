@@ -14,6 +14,7 @@ struct VideoItemModel: Identifiable, Equatable, Codable {
     let resolution: String?
     let createdAt: String?
     let sizeMB: Int?
+    let clips: [String]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -23,5 +24,6 @@ struct VideoItemModel: Identifiable, Equatable, Codable {
         case resolution
         case createdAt
         case sizeMB
+        case clips
     }
 }

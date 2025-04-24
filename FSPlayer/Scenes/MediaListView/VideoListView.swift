@@ -3,24 +3,24 @@ import SwiftUI
 struct VideoListView: View {
     // Внешние зависимости
     @EnvironmentObject private var session: SessionStorage
-    @Binding        var navigationPath: [NavigationDestination]
-
+    @Binding var navigationPath: [NavigationDestination]
+    
     // ViewModel
     @StateObject private var viewModel = VideoListViewModel()
-
+    
     var body: some View {
         VStack {
             if viewModel.isLoading {
                 ProgressView("Loading videos…")
                     .padding()
             }
-
+            
             if let message = viewModel.errorMessage {
                 VStack(spacing: 16) {
                     Text(message)
                         .foregroundStyle(.red)
                         .multilineTextAlignment(.center)
-
+                    
                     Button("Back to Login") {
                         session.logout()
                         navigationPath = []
@@ -57,8 +57,8 @@ struct VideoListView: View {
             Text("Are you sure you want to delete \"\(file.name)\"?")
         }
         .task { await initialLoad() }
-        .fullScreenCover(item: $viewModel.selectedFile) { file in
-            VideoPlayerView(file: file, session: session)
+        .fullScreenCover(item: $viewModel.selectedVideo) { video in
+            VideoPlayerView(video: video, session: session)
                 .environmentObject(session)
         }
     }
@@ -80,38 +80,38 @@ private extension VideoListView {
                 .pickerStyle(.segmented)
             }
             .padding(.horizontal)
-
+            
             // Список видео
             List {
-                ForEach(viewModel.sortedFiles, id: \.id) { file in
-                    VideoItemView(file: file)
-                        .contentShape(Rectangle())
-                        .onTapGesture { viewModel.selectedFile = file }
-                        .swipeActions {
-                            Button(role: .destructive) {
-                                viewModel.fileToDelete           = file
-                                viewModel.showDeleteConfirmation = true
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                ForEach(viewModel.sortedFiles, id: \.id) { video in
+                    VideoItemView(video: video) { video, playlist in
+                        viewModel.selectedVideo = SelectedVideoItem(video: video, playlist: playlist)
+                    }
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            viewModel.fileToDelete           = video
+                            viewModel.showDeleteConfirmation = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
+                    }
                 }
             }
             .listStyle(.insetGrouped)
             .refreshable { await refresh() }
         }
     }
-
+    
     // MARK: ‑ Intents
     func initialLoad() async {
         guard let host = session.host, let token = session.token else { return }
         await viewModel.loadFiles(host: host, token: token)
     }
-
+    
     func refresh()  async{
         Task { await initialLoad() }
     }
-
+    
     func delete(_ file: VideoItemModel) async {
         guard let host = session.host, let token = session.token else { return }
         await viewModel.delete(file, host: host, token: token)
