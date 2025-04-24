@@ -16,12 +16,12 @@ final class VideoPlayerViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     // MARK: – Dependencies & state
-    private let file: FileItem
+    private let file: VideoItemModel
     private unowned let session: SessionStorage
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: – Init
-    init(file: FileItem, session: SessionStorage) {
+    init(file: VideoItemModel, session: SessionStorage) {
         self.file    = file
         self.session = session
         configurePlayer()

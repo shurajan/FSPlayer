@@ -38,7 +38,9 @@ struct VideoListView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    refresh()
+                    Task {
+                        await refresh()
+                    }
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
@@ -79,29 +81,20 @@ private extension VideoListView {
             }
             .padding(.horizontal)
 
-            // Список файлов
+            // Список видео
             List {
                 ForEach(viewModel.sortedFiles, id: \.id) { file in
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(file.name)
-                                .font(.headline)
-                                .lineLimit(1)
-
-                            Spacer()
+                    VideoItemView(file: file)
+                        .contentShape(Rectangle())
+                        .onTapGesture { viewModel.selectedFile = file }
+                        .swipeActions {
+                            Button(role: .destructive) {
+                                viewModel.fileToDelete           = file
+                                viewModel.showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
-                    }
-                    .padding(.vertical, 4)
-                    .contentShape(Rectangle())
-                    .onTapGesture { viewModel.selectedFile = file }
-                    .swipeActions {
-                        Button(role: .destructive) {
-                            viewModel.fileToDelete           = file
-                            viewModel.showDeleteConfirmation = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
                 }
             }
             .listStyle(.insetGrouped)
@@ -115,11 +108,11 @@ private extension VideoListView {
         await viewModel.loadFiles(host: host, token: token)
     }
 
-    func refresh() {
+    func refresh()  async{
         Task { await initialLoad() }
     }
 
-    func delete(_ file: FileItem) async {
+    func delete(_ file: VideoItemModel) async {
         guard let host = session.host, let token = session.token else { return }
         await viewModel.delete(file, host: host, token: token)
     }
