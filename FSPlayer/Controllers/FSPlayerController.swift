@@ -20,7 +20,7 @@ final class FSPlayerController: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var token: String? = KeychainTokenService.shared.loadAPIToken()
     
-    @Published private(set) var files: [FileItem] = []
+    @Published private(set) var files: [VideoItemModel] = []
     
     enum State: Equatable{
         case idle
@@ -29,7 +29,7 @@ final class FSPlayerController: ObservableObject {
         case loading
         case error(AppError)
         case success
-        case fileList([FileItem])
+        case fileList([VideoItemModel])
     }
     
     enum Event {
@@ -40,7 +40,7 @@ final class FSPlayerController: ObservableObject {
         case loginSucceeded
         case cancel
         case fetchFiles
-        case filesFetched([FileItem])
+        case filesFetched([VideoItemModel])
         case filesFetchFailed(String)
     }
     

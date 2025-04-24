@@ -34,7 +34,7 @@ enum VideoServiceError: LocalizedError {
 // MARK: - Protocol
 
 protocol VideoServiceProtocol {
-    func fetchFiles(host: String, token: String) async -> Result<[FileItem], Error>
+    func fetchFiles(host: String, token: String) async -> Result<[VideoItemModel], Error>
     func deleteFile(name: String, host: String, token: String) async -> Result<Void, Error>
 }
 
@@ -45,7 +45,7 @@ final class VideoService: VideoServiceProtocol {
     
     private init() {}
     
-    func fetchFiles(host: String, token: String) async -> Result<[FileItem], Error> {
+    func fetchFiles(host: String, token: String) async -> Result<[VideoItemModel], Error> {
         guard !token.isEmpty else {
             return .failure(VideoServiceError.invalidToken(message: "Authorization token is empty"))
         }
@@ -74,7 +74,7 @@ final class VideoService: VideoServiceProtocol {
             case 200:
                 // Try to decode successful response
                 do {
-                    let fileItems = try JSONDecoder().decode([FileItem].self, from: data)
+                    let fileItems = try JSONDecoder().decode([VideoItemModel].self, from: data)
                     return .success(fileItems)
                 } catch {
                     return .failure(VideoServiceError.decodingError(message: "Failed to decode file list: \(error.localizedDescription)"))
