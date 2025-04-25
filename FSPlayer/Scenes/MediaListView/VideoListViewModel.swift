@@ -21,8 +21,8 @@ final class VideoListViewModel: ObservableObject {
     // MARK: ‑ Sorting
     enum SortOption: String, CaseIterable, Identifiable {
         case name       = "Name (A–Z)"
-        case size       = "Size (Descending)"
-        case duration   = "Duration (Descending)"
+        //case size       = "Size (Descending)"
+        //case duration   = "Duration (Descending)"
         case createdAt  = "Newest First"
 
         var id: String { rawValue }
@@ -33,7 +33,7 @@ final class VideoListViewModel: ObservableObject {
         case .name:
             return videos.sorted { $0.name.lowercased() < $1.name.lowercased() }
 
-        case .size:
+        /*case .size:
             return videos.sorted {
                 ($0.sizeMB ?? 0) > ($1.sizeMB ?? 0)
             }
@@ -41,7 +41,7 @@ final class VideoListViewModel: ObservableObject {
         case .duration:
             return videos.sorted {
                 ($0.duration ?? 0) > ($1.duration ?? 0)
-            }
+            }*/
 
         case .createdAt:
             return videos.sorted {

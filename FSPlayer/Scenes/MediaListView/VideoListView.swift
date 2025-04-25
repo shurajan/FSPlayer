@@ -85,7 +85,7 @@ private extension VideoListView {
             List {
                 ForEach(viewModel.sortedFiles, id: \.id) { video in
                     VideoItemView(video: video) { video, playlist in
-                        viewModel.selectedVideo = SelectedVideoItem(video: video, playlist: playlist)
+                        viewModel.selectedVideo = SelectedVideoItem(video: video, playlist: playlist.name)
                     }
                     .swipeActions {
                         Button(role: .destructive) {

@@ -13,14 +13,6 @@ struct SelectedVideoItem: Identifiable {
     let playlist: String
     
     func hlsPathWithPlaylist() -> String {
-        if playlist.lowercased() == "default" {
-            return video.hlsURL
-        }
-
-        guard let basePath = video.hlsURL.components(separatedBy: "/").dropLast().joined(separator: "/").addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            return video.hlsURL
-        }
-
-        return "\(basePath)/\(playlist)"
+        return "\(video.hlsURL)\(playlist)"
     }
 }
