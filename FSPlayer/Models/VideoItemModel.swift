@@ -28,6 +28,8 @@ struct PlaylistItemModel: Identifiable, Equatable, Hashable, Codable {
     let duration: Int
     let resolution: String?
     let sizeMB: Int?
+    let segmentCount: Int?
+    let avgSegmentDuration: Double?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -35,8 +37,10 @@ struct PlaylistItemModel: Identifiable, Equatable, Hashable, Codable {
         case duration
         case resolution
         case sizeMB
+        case segmentCount
+        case avgSegmentDuration
     }
-    
+
     var shortName: String {
         String(name.split(separator: ".").first ?? "")
     }

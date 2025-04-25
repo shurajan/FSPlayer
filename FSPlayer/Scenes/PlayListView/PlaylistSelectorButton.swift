@@ -28,11 +28,10 @@ struct PlaylistSelectorButton: View {
             .background(Color.gray.opacity(0.15))
             .cornerRadius(6)
         }
-        .sheet(isPresented: $showSheet) {
+        .fullScreenCover(isPresented: $showSheet) {
             PlaylistSelectionView(
                 selected: $selected,
-                playlists: playlists,
-                dismiss: { showSheet = false }
+                playlists: playlists
             )
         }
     }

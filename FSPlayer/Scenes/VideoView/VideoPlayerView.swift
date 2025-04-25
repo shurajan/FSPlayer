@@ -42,6 +42,9 @@ struct VideoPlayerView: View {
                     .ignoresSafeArea()
                     .onAppear { viewModel.play() }
                     .onDisappear { viewModel.cleanup() }
+                    .onTapGesture {
+                        print("Tapped")
+                    }
             } else if let error = viewModel.errorMessage {
                 Text(error)
                     .padding()
@@ -56,12 +59,12 @@ struct VideoPlayerView: View {
 
     private var closeButton: some View {
         Button(action: dismiss.callAsFunction) {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 28, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-                .padding()
+            Image(systemName: "chevron.backward")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.blue)
+                .padding(.leading, 16)
+                .padding(.top, 30)
         }
-        .tint(.white)
     }
 
     private var dragGesture: some Gesture {
@@ -70,12 +73,11 @@ struct VideoPlayerView: View {
                 state = true
             }
             .onChanged { gesture in
-                if gesture.translation.height > 0 {
-                    dragOffset = gesture.translation
-                }
+                dragOffset = gesture.translation
             }
             .onEnded { gesture in
-                if gesture.translation.height > 150 {
+                let verticalAmount = gesture.translation.height
+                if abs(verticalAmount) > 150 {
                     dismiss()
                 } else {
                     dragOffset = .zero

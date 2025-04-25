@@ -7,12 +7,12 @@
 
 struct SelectedVideoItem: Identifiable {
     var id: String {
-        playlist + "_" + video.id
+        video.id + "_" + playlist.id
     }
     let video: VideoItemModel
-    let playlist: String
+    let playlist: PlaylistItemModel
     
     func hlsPathWithPlaylist() -> String {
-        return "\(video.hlsURL)\(playlist)"
+        return "\(video.hlsURL)\(playlist.name)"
     }
 }
