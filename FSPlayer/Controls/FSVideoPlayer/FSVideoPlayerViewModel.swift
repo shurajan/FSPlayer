@@ -17,17 +17,18 @@ final class FSVideoPlayerViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var hideControlsTask: Task<Void, Never>?
     private var seekTask: Task<Void, Never>?
-    private var finalSeekTask: Task<Void, Never>?
+    private var debouncedSeekTask: Task<Void, Never>?
     private var cachedPlayerLayer: AVPlayerLayer?
-
-    private var lastSeekUpdate: Date = .now
-    private var lastSeekValue: Double = 0
 
     @Published var isPlaying = false
     @Published var showControls = true
     @Published var isInteracting = false
     @Published var currentTime: Double = 0
     @Published var duration: Double = 1
+    @Published var sliderValue: Double = 0
+    
+    // Добавим настройки для быстрого просмотра
+    private let seekDebounceDelay: UInt64 = 30_000_000 // 30ms вместо 50ms для более быстрого отклика
 
     // MARK: - Initialization
 
@@ -39,14 +40,16 @@ final class FSVideoPlayerViewModel: ObservableObject {
     private func setupObservers() {
         timeObserver = player.addPeriodicTimeObserver(
             forInterval: CMTime(seconds: 0.3, preferredTimescale: 600),
-            queue: .main,
-            using: { [weak self] time in
-                guard let self else { return }
-                Task { @MainActor in
+            queue: .main
+        ) { [weak self] time in
+            guard let self else { return }
+            Task { @MainActor in
+                if !self.isInteracting {
                     self.currentTime = time.seconds
+                    self.sliderValue = time.seconds
                 }
             }
-        )
+        }
 
         if let item = player.currentItem {
             item.publisher(for: \.duration)
@@ -74,7 +77,17 @@ final class FSVideoPlayerViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Public Methods
+    // MARK: - Public Controls
+    
+    func pause() {
+        player.pause()
+        isPlaying = false
+    }
+
+    func play() {
+        player.play()
+        isPlaying = true
+    }
 
     func startPlaying() {
         player.play()
@@ -99,78 +112,56 @@ final class FSVideoPlayerViewModel: ObservableObject {
         restartHideControls()
     }
 
-    func setAspectFill(_ fill: Bool) {
-        if cachedPlayerLayer == nil || cachedPlayerLayer?.player !== player {
-            cachedPlayerLayer = findPlayerLayer()
-        }
-        cachedPlayerLayer?.videoGravity = fill ? .resizeAspectFill : .resizeAspect
-    }
-
     func startInteraction() {
         isInteracting = true
         cancelHideControls()
         showControlsManually()
-        pauseIfNeeded()
     }
 
     func endInteraction() {
         isInteracting = false
         restartHideControls()
-        resumeIfNeeded()
     }
 
-    func seek(to time: Double) {
+    func seekImmediately(to time: Double) {
         seekTask?.cancel()
         seekTask = Task { @MainActor in
             let cmTime = CMTime(seconds: time, preferredTimescale: 600)
             await player.seek(
                 to: cmTime,
-                toleranceBefore: CMTime(seconds: 0.3, preferredTimescale: 600),
-                toleranceAfter: CMTime(seconds: 0.3, preferredTimescale: 600)
+                toleranceBefore: .zero,
+                toleranceAfter: .zero
             )
             currentTime = time
         }
     }
 
-    func seekConsideringSpeed(to newValue: Double) {
-        let now = Date()
-        let deltaSeconds = now.timeIntervalSince(lastSeekUpdate)
-        let deltaPosition = abs(newValue - lastSeekValue)
-        let speed = deltaPosition / max(deltaSeconds, 0.001) // безопасное деление
-
-        lastSeekUpdate = now
-        lastSeekValue = newValue
-
-        if speed > 60 {
-            // very fast scroll
-            scheduleFinalAccurateSeek(to: newValue)
-            return
+    func seekDebounced(to time: Double) {
+        debouncedSeekTask?.cancel()
+        debouncedSeekTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: self?.seekDebounceDelay ?? 30_000_000) // 30ms пауза для более быстрого отклика
+            await MainActor.run {
+                guard let self else { return }
+                // Используем более быстрый метод поиска для скраббинга
+                let cmTime = CMTime(seconds: time, preferredTimescale: 600)
+                self.player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+                self.currentTime = time
+            }
         }
-
-        if speed < 2 {
-            // slow
-            seek(to: newValue)
-        } else if deltaPosition > 10 {
-            // normal speed
-            seek(to: newValue)
-        }
-
-        // В любом случае запланировать финальный точный догоняющий seek
-        scheduleFinalAccurateSeek(to: newValue)
     }
 
     func skipForward() {
         let current = player.currentTime()
         let newTime = CMTimeGetSeconds(current) + 10
         let clampedTime = min(newTime, duration)
-        seek(to: clampedTime)
+        seekImmediately(to: clampedTime)
     }
 
     func skipBackward() {
         let current = player.currentTime()
         let newTime = CMTimeGetSeconds(current) - 10
         let clampedTime = max(newTime, 0)
-        seek(to: clampedTime)
+        seekImmediately(to: clampedTime)
     }
 
     func cancelHideControls() {
@@ -204,11 +195,18 @@ final class FSVideoPlayerViewModel: ObservableObject {
         cancellables.forEach { $0.cancel() }
         hideControlsTask?.cancel()
         seekTask?.cancel()
-        finalSeekTask?.cancel()
+        debouncedSeekTask?.cancel()
         cachedPlayerLayer = nil
     }
 
-    // MARK: - Private Methods
+    func setAspectFill(_ fill: Bool) {
+        if cachedPlayerLayer == nil || cachedPlayerLayer?.player !== player {
+            cachedPlayerLayer = findPlayerLayer()
+        }
+        cachedPlayerLayer?.videoGravity = fill ? .resizeAspectFill : .resizeAspect
+    }
+
+    // MARK: - Private Helpers
 
     private func scheduleHideControls() {
         hideControlsTask?.cancel()
@@ -222,17 +220,6 @@ final class FSVideoPlayerViewModel: ObservableObject {
                     }
                 }
                 self.hideControlsTask = nil
-            }
-        }
-    }
-
-    private func scheduleFinalAccurateSeek(to time: Double) {
-        finalSeekTask?.cancel()
-        finalSeekTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms пауза
-            await MainActor.run {
-                guard let self else { return }
-                self.seek(to: time)
             }
         }
     }

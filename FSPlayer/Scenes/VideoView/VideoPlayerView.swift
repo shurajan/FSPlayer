@@ -29,7 +29,7 @@ struct VideoPlayerView: View {
         background
             .gesture(dragGesture)
             .animation(.easeInOut(duration: 0.2), value: dragOffset)
-            .performanceOverlay()
+            //.performanceOverlay()
     }
     
     private var background: some View {
