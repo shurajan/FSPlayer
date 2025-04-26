@@ -10,7 +10,6 @@ import SwiftUI
 enum NavigationDestination {
     case login
     case filesList
-    case player
 }
 
 struct FSPlayerView: View {
@@ -19,7 +18,7 @@ struct FSPlayerView: View {
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
-
+            
             LoginView(navigationPath: $navigationPath)
                 .environmentObject(session)
                 .navigationDestination(for: NavigationDestination.self) { destination in
@@ -30,30 +29,9 @@ struct FSPlayerView: View {
                     case .filesList:
                         VideoListView(navigationPath: $navigationPath)
                             .environmentObject(session)
-                    case .player:
-                        playerView
                     }
                 }
         }
-    }
-    
-    // Экран плеера
-    private var playerView: some View {
-        VStack(spacing: 20) {
-            Text("Player Screen")
-                .font(.title)
-            
-            Button("Back to Files") {
-                navigationPath.removeLast()
-            }
-            .buttonStyle(.bordered)
-            
-            Button("Back to Login") {
-                navigationPath = []
-            }
-            .buttonStyle(.bordered)
-        }
-        .navigationTitle("Player")
-        .navigationBarTitleDisplayMode(.inline)
+        
     }
 }
