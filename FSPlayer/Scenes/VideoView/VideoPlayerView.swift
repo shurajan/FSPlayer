@@ -29,8 +29,6 @@ struct VideoPlayerView: View {
         ZStack(alignment: .topLeading) {
             background
                 .gesture(dragGesture)
-
-            closeButton
         }
         .animation(.easeInOut(duration: 0.2), value: dragOffset)
     }
@@ -38,13 +36,12 @@ struct VideoPlayerView: View {
     private var background: some View {
         Group {
             if let player = viewModel.player {
-                VideoPlayer(player: player)
+                FSVideoPlayerView(player: player) {
+                    dismiss()
+                }
                     .ignoresSafeArea()
                     .onAppear { viewModel.play() }
                     .onDisappear { viewModel.cleanup() }
-                    .onTapGesture {
-                        print("Tapped")
-                    }
             } else if let error = viewModel.errorMessage {
                 Text(error)
                     .padding()
@@ -57,7 +54,7 @@ struct VideoPlayerView: View {
         .opacity(1.0 - min(abs(dragOffset.height / 300), 1))
     }
 
-    private var closeButton: some View {
+    /*private var closeButton: some View {
         Button(action: dismiss.callAsFunction) {
             Image(systemName: "chevron.backward")
                 .font(.system(size: 20, weight: .medium))
@@ -65,7 +62,7 @@ struct VideoPlayerView: View {
                 .padding(.leading, 16)
                 .padding(.top, 30)
         }
-    }
+    }*/
 
     private var dragGesture: some Gesture {
         DragGesture()
