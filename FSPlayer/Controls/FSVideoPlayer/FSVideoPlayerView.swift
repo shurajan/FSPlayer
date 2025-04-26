@@ -12,10 +12,12 @@ struct FSVideoPlayerView: View {
     @StateObject private var viewModel: FSVideoPlayerViewModel
 
     var onClose: (() -> Void)?
+    var buttonColor: Color
 
-    init(player: AVPlayer, onClose: (() -> Void)? = nil) {
+    init(player: AVPlayer, buttonColor: Color = .white, onClose: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(player: player))
         self.onClose = onClose
+        self.buttonColor = buttonColor
     }
 
     @State private var isAspectFill = false
@@ -57,19 +59,21 @@ struct FSVideoPlayerView: View {
             }) {
                 Image(systemName: "xmark")
                     .font(.title2)
-                    .foregroundColor(.white)
-                    .padding()
+                    .foregroundColor(buttonColor)
+                    .padding(8)
                     .background(Color.black.opacity(0.6))
                     .clipShape(Circle())
             }
+
             Spacer()
+
             Button(action: {
                 isAspectFill.toggle()
             }) {
                 Image(systemName: isAspectFill ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left")
                     .font(.title2)
-                    .foregroundColor(.white)
-                    .padding()
+                    .foregroundColor(buttonColor)
+                    .padding(8)
                     .background(Color.black.opacity(0.6))
                     .clipShape(Circle())
             }
@@ -82,15 +86,39 @@ struct FSVideoPlayerView: View {
         VStack {
             Spacer()
 
-            Button(action: {
-                viewModel.togglePlayPause()
-            }) {
-                Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 50))
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(Color.black.opacity(0.6))
-                    .clipShape(Circle())
+            HStack(spacing: 40) {
+                Button(action: {
+                    viewModel.skipBackward()
+                }) {
+                    Image(systemName: "gobackward.10")
+                        .font(.system(size: 40))
+                        .foregroundColor(buttonColor)
+                        .padding()
+                        .background(Color.black.opacity(0.6))
+                        .clipShape(Circle())
+                }
+
+                Button(action: {
+                    viewModel.togglePlayPause()
+                }) {
+                    Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(buttonColor)
+                        .padding()
+                        .background(Color.black.opacity(0.6))
+                        .clipShape(Circle())
+                }
+
+                Button(action: {
+                    viewModel.skipForward()
+                }) {
+                    Image(systemName: "goforward.10")
+                        .font(.system(size: 40))
+                        .foregroundColor(buttonColor)
+                        .padding()
+                        .background(Color.black.opacity(0.6))
+                        .clipShape(Circle())
+                }
             }
             .padding()
 

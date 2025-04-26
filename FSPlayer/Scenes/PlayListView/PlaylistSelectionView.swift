@@ -42,7 +42,7 @@ struct PlaylistSelectionView: View {
                     Button(action: dismiss.callAsFunction) {
                         Image(systemName: "chevron.backward")
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color.dynamicColor(light: Color.white, dark: Color.black))
                     }
                 }
             }

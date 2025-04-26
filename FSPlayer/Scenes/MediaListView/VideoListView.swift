@@ -1,31 +1,42 @@
+//
+//  VideoListView.swift
+//  FSPlayer
+//
+//  Created by Alexander Bralnin on 24.04.2025.
+//
+
 import SwiftUI
 
 struct VideoListView: View {
-    // Внешние зависимости
     @EnvironmentObject private var session: SessionStorage
+    @Environment(\.dismiss) private var dismiss
     @Binding var navigationPath: [NavigationDestination]
     
-    // ViewModel
     @StateObject private var viewModel = VideoListViewModel()
-    
+
     var body: some View {
         VStack {
             if viewModel.isLoading {
                 ProgressView("Loading videos…")
                     .padding()
-            }
-            
-            if let message = viewModel.errorMessage {
+            } else if let message = viewModel.errorMessage {
                 VStack(spacing: 16) {
                     Text(message)
                         .foregroundStyle(.red)
                         .multilineTextAlignment(.center)
-                    
-                    Button("Back to Login") {
+
+                    Button(action: {
                         session.logout()
                         navigationPath = []
+                    }) {
+                        Text("Back to Login")
+                            .font(.headline)
+                            .foregroundColor(Color.dynamicColor(light: .black, dark: .white))
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .background(Color.dynamicColor(light: .black.opacity(0.1), dark: .white.opacity(0.1)))
+                            .cornerRadius(12)
                     }
-                    .buttonStyle(.bordered)
                 }
                 .frame(maxWidth: 500)
                 .padding()
@@ -33,22 +44,31 @@ struct VideoListView: View {
                 content
             }
         }
-        .navigationTitle("Media")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(Color.dynamicColor(light: .black, dark: .white))
+                }
+            }
+            
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    Task {
-                        await refresh()
-                    }
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
+                Button(action: {
+                    Task { await refresh() }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(Color.dynamicColor(light: .black, dark: .white))
                 }
             }
         }
-        .alert("Delete Video?",
-               isPresented: $viewModel.showDeleteConfirmation,
-               presenting: viewModel.fileToDelete) { file in
+        .navigationTitle("Media")
+        .navigationBarBackButtonHidden(true) 
+        .alert("Delete Video?", isPresented: $viewModel.showDeleteConfirmation, presenting: viewModel.fileToDelete) { file in
             Button("Delete", role: .destructive) {
                 Task { await delete(file) }
             }
@@ -64,7 +84,8 @@ struct VideoListView: View {
     }
 }
 
-// MARK: ‑ Private subviews & helpers
+// MARK: - Private Subviews & Helpers
+
 private extension VideoListView {
     var content: some View {
         VStack(spacing: 10) {
@@ -89,7 +110,7 @@ private extension VideoListView {
                     }
                     .swipeActions {
                         Button(role: .destructive) {
-                            viewModel.fileToDelete           = video
+                            viewModel.fileToDelete = video
                             viewModel.showDeleteConfirmation = true
                         } label: {
                             Label("Delete", systemImage: "trash")
@@ -101,15 +122,14 @@ private extension VideoListView {
             .refreshable { await refresh() }
         }
     }
-    
-    // MARK: ‑ Intents
+
     func initialLoad() async {
         guard let host = session.host, let token = session.token else { return }
         await viewModel.loadFiles(host: host, token: token)
     }
     
-    func refresh()  async{
-        Task { await initialLoad() }
+    func refresh() async {
+        await initialLoad()
     }
     
     func delete(_ file: VideoItemModel) async {

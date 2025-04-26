@@ -47,8 +47,8 @@ struct VideoItemView: View {
                     .scaledToFit()
                     .frame(width: 20, height: 20)
                     .padding(16)
-                    .background(Color.blue.opacity(0.15))
-                    .foregroundColor(.blue)
+                    .background(Color.green.opacity(0.15))
+                    .foregroundColor(.green)
                     .clipShape(Circle())
             }
             .buttonStyle(BorderlessButtonStyle())

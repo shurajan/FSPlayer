@@ -10,17 +10,26 @@ import Combine
 
 @MainActor
 final class FSVideoPlayerViewModel: ObservableObject {
+    // MARK: - Properties
+
     let player: AVPlayer
     private var timeObserver: Any?
     private var cancellables = Set<AnyCancellable>()
     private var hideControlsTask: Task<Void, Never>?
     private var seekTask: Task<Void, Never>?
+    private var finalSeekTask: Task<Void, Never>?
+    private var cachedPlayerLayer: AVPlayerLayer?
+
+    private var lastSeekUpdate: Date = .now
+    private var lastSeekValue: Double = 0
 
     @Published var isPlaying = false
     @Published var showControls = true
     @Published var isInteracting = false
     @Published var currentTime: Double = 0
     @Published var duration: Double = 1
+
+    // MARK: - Initialization
 
     init(player: AVPlayer) {
         self.player = player
@@ -65,6 +74,8 @@ final class FSVideoPlayerViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Public Methods
+
     func startPlaying() {
         player.play()
         isPlaying = true
@@ -89,33 +100,12 @@ final class FSVideoPlayerViewModel: ObservableObject {
     }
 
     func setAspectFill(_ fill: Bool) {
-        guard let playerLayer = findPlayerLayer() else { return }
-        playerLayer.videoGravity = fill ? .resizeAspectFill : .resizeAspect
+        if cachedPlayerLayer == nil || cachedPlayerLayer?.player !== player {
+            cachedPlayerLayer = findPlayerLayer()
+        }
+        cachedPlayerLayer?.videoGravity = fill ? .resizeAspectFill : .resizeAspect
     }
 
-    private func findPlayerLayer() -> AVPlayerLayer? {
-        guard let window = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first?.windows.first(where: { $0.isKeyWindow })
-        else {
-            return nil
-        }
-
-        return findLayer(in: window.layer)
-    }
-
-    private func findLayer(in layer: CALayer) -> AVPlayerLayer? {
-        if let playerLayer = layer as? AVPlayerLayer {
-            return playerLayer
-        }
-        for sublayer in layer.sublayers ?? [] {
-            if let found = findLayer(in: sublayer) {
-                return found
-            }
-        }
-        return nil
-    }
-    
     func startInteraction() {
         isInteracting = true
         cancelHideControls()
@@ -142,6 +132,47 @@ final class FSVideoPlayerViewModel: ObservableObject {
         }
     }
 
+    func seekConsideringSpeed(to newValue: Double) {
+        let now = Date()
+        let deltaSeconds = now.timeIntervalSince(lastSeekUpdate)
+        let deltaPosition = abs(newValue - lastSeekValue)
+        let speed = deltaPosition / max(deltaSeconds, 0.001) // безопасное деление
+
+        lastSeekUpdate = now
+        lastSeekValue = newValue
+
+        if speed > 60 {
+            // very fast scroll
+            scheduleFinalAccurateSeek(to: newValue)
+            return
+        }
+
+        if speed < 2 {
+            // slow
+            seek(to: newValue)
+        } else if deltaPosition > 10 {
+            // normal speed
+            seek(to: newValue)
+        }
+
+        // В любом случае запланировать финальный точный догоняющий seek
+        scheduleFinalAccurateSeek(to: newValue)
+    }
+
+    func skipForward() {
+        let current = player.currentTime()
+        let newTime = CMTimeGetSeconds(current) + 10
+        let clampedTime = min(newTime, duration)
+        seek(to: clampedTime)
+    }
+
+    func skipBackward() {
+        let current = player.currentTime()
+        let newTime = CMTimeGetSeconds(current) - 10
+        let clampedTime = max(newTime, 0)
+        seek(to: clampedTime)
+    }
+
     func cancelHideControls() {
         hideControlsTask?.cancel()
     }
@@ -149,40 +180,6 @@ final class FSVideoPlayerViewModel: ObservableObject {
     func restartHideControls() {
         hideControlsTask?.cancel()
         scheduleHideControls()
-    }
-
-    private func scheduleHideControls() {
-        hideControlsTask?.cancel()
-        hideControlsTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
-            await MainActor.run {
-                guard let self else { return }
-                if !self.isInteracting { // 👈 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
-                    withAnimation {
-                        self.showControls = false
-                    }
-                }
-                self.hideControlsTask = nil
-            }
-        }
-    }
-
-    private func showControlsManually() {
-        withAnimation {
-            showControls = true
-        }
-    }
-
-    private func pauseIfNeeded() {
-        if isPlaying {
-            player.pause()
-        }
-    }
-
-    private func resumeIfNeeded() {
-        if isPlaying {
-            player.play()
-        }
     }
 
     func formattedTime(_ time: Double) -> String {
@@ -207,5 +204,76 @@ final class FSVideoPlayerViewModel: ObservableObject {
         cancellables.forEach { $0.cancel() }
         hideControlsTask?.cancel()
         seekTask?.cancel()
+        finalSeekTask?.cancel()
+        cachedPlayerLayer = nil
+    }
+
+    // MARK: - Private Methods
+
+    private func scheduleHideControls() {
+        hideControlsTask?.cancel()
+        hideControlsTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            await MainActor.run {
+                guard let self else { return }
+                if !self.isInteracting {
+                    withAnimation {
+                        self.showControls = false
+                    }
+                }
+                self.hideControlsTask = nil
+            }
+        }
+    }
+
+    private func scheduleFinalAccurateSeek(to time: Double) {
+        finalSeekTask?.cancel()
+        finalSeekTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms пауза
+            await MainActor.run {
+                guard let self else { return }
+                self.seek(to: time)
+            }
+        }
+    }
+
+    private func showControlsManually() {
+        withAnimation {
+            showControls = true
+        }
+    }
+
+    private func pauseIfNeeded() {
+        if isPlaying {
+            player.pause()
+        }
+    }
+
+    private func resumeIfNeeded() {
+        if isPlaying {
+            player.play()
+        }
+    }
+
+    private func findPlayerLayer() -> AVPlayerLayer? {
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first?.windows.first(where: { $0.isKeyWindow })
+        else {
+            return nil
+        }
+        return findLayer(in: window.layer)
+    }
+
+    private func findLayer(in layer: CALayer) -> AVPlayerLayer? {
+        if let playerLayer = layer as? AVPlayerLayer, playerLayer.player === player {
+            return playerLayer
+        }
+        for sublayer in layer.sublayers ?? [] {
+            if let found = findLayer(in: sublayer) {
+                return found
+            }
+        }
+        return nil
     }
 }

@@ -32,12 +32,15 @@ struct LoginView: View {
                 } label: {
                     if viewModel.isLoading {
                         ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .dynamicColor(light: .white, dark: .black)))
                     } else {
                         Text("Login")
+                            .foregroundColor(.dynamicColor(light: .white, dark: .black))
                     }
                 }
-                .disabled(viewModel.isLoading)
                 .buttonStyle(.borderedProminent)
+                .tint(.dynamicColor(light: .black, dark: .white))
+                .disabled(viewModel.isLoading)
             }
             .padding()
             .frame(maxWidth: 400)

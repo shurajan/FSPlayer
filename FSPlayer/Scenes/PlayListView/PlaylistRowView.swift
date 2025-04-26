@@ -58,10 +58,10 @@ struct PlaylistRowView: View {
                 Button(action: onSelect) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.dynamicColor(light: .black, dark: .white))
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
-                        .background(Color.blue.opacity(0.1))
+                        .tint(Color.dynamicColor(light: Color.black, dark: Color.white))
                         .clipShape(Capsule())
                 }
             }
