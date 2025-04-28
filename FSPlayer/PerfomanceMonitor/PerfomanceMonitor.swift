@@ -15,6 +15,7 @@ final class PerformanceMonitor: ObservableObject {
     @Published var fps: Int = 0
     @Published var memory: Double = 0 // MB
     @Published var cpu: Double = 0     // %
+    @Published var threads: Int = 0
 
     private var displayLink: CADisplayLink?
     private var lastTimestamp: TimeInterval = 0
@@ -95,6 +96,10 @@ final class PerformanceMonitor: ObservableObject {
         }
 
         guard let threadList else { return 0 }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.threads = Int(threadCount)
+        }
 
         var totalUsageOfCPU = 0.0
 

@@ -16,6 +16,7 @@ struct PerformanceOverlayView: View {
             Text("FPS: \(monitor.fps)")
             Text(String(format: "CPU: %.1f%%", monitor.cpu))
             Text(String(format: "Memory: %.1f MB", monitor.memory))
+            Text("Threads: \(monitor.threads)")
         }
         .font(.caption2)
         .padding(8)
