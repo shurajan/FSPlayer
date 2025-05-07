@@ -11,6 +11,7 @@ import AVKit
 
 struct FSVideoPlayerView: View {
     @StateObject private var viewModel: FSVideoPlayerViewModel
+    @StateObject private var sliderViewModel: FSVideoSliderViewModel
     
     var onClose: (() -> Void)?
     var buttonColor: Color
@@ -19,6 +20,7 @@ struct FSVideoPlayerView: View {
     
     init(player: AVPlayer, buttonColor: Color = .white, onClose: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(player: player))
+        _sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(player: player))
         self.onClose = onClose
         self.buttonColor = buttonColor
     }
@@ -104,13 +106,11 @@ struct FSVideoPlayerView: View {
     // MARK: - Control Buttons
     private var controlButtons: some View {
         HStack(spacing: 40) {
-            /*
              controlButton(
              iconName: "gobackward.10",
              size: 40,
-             action: viewModel.skipBackward
+             action: sliderViewModel.skipBackward
              )
-             */
             
             controlButton(
                 iconName: viewModel.isPlaying ? "pause.fill" : "play.fill",
@@ -118,13 +118,11 @@ struct FSVideoPlayerView: View {
                 action: viewModel.togglePlayPause
             )
             
-            /*
              controlButton(
              iconName: "goforward.10",
              size: 40,
-             action: viewModel.skipForward
+             action: sliderViewModel.skipForward
              )
-             */
         }
     }
     
@@ -144,7 +142,7 @@ struct FSVideoPlayerView: View {
     private var progressControls: some View {
         VStack {
             FSVideoSlider(
-                player: viewModel.player,
+                viewModel: sliderViewModel,
                 isInteracting: Binding(
                     get: { viewModel.isInteracting },
                     set: { newValue in

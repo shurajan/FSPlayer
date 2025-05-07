@@ -41,6 +41,7 @@ final class FSVideoSliderViewModel: ObservableObject {
             queue: .main
         ) { [weak self] time in
             guard let self else { return }
+            
             Task { @MainActor in
                 if !self.isSeeking {
                     let seconds = time.seconds
