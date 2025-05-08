@@ -12,6 +12,7 @@ struct VideoPlayerView: View {
     let selectedVideo: SelectedVideoItem
     
     @EnvironmentObject private var session: SessionStorage
+    @EnvironmentObject private var globalSettings: GlobalSettings
     @Environment(\.dismiss) private var dismiss
     
     @StateObject private var viewModel: VideoPlayerViewModel
@@ -26,10 +27,17 @@ struct VideoPlayerView: View {
     }
     
     var body: some View {
-        background
+        let view = background
             .gesture(dragGesture)
             .animation(.easeInOut(duration: 0.2), value: dragOffset)
-            .performanceOverlay()
+
+        Group {
+            if globalSettings.isPerformanceOverlayEnabled {
+                view.performanceOverlay()
+            } else {
+                view
+            }
+        }
     }
     
     private var background: some View {

@@ -9,12 +9,13 @@ import SwiftUI
 
 enum NavigationDestination {
     case login
-    case filesList
+    case videoList
 }
 
 struct FSPlayerView: View {
     @State private var navigationPath = [NavigationDestination]()
     @StateObject private var session = SessionStorage()
+    @StateObject private var globalSettings = GlobalSettings()
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -26,9 +27,10 @@ struct FSPlayerView: View {
                     case .login:
                         LoginView(navigationPath: $navigationPath)
                             .environmentObject(session)
-                    case .filesList:
+                    case .videoList:
                         VideoListView(navigationPath: $navigationPath)
                             .environmentObject(session)
+                            .environmentObject(globalSettings)
                     }
                 }
         }

@@ -9,10 +9,12 @@ import SwiftUI
 
 struct VideoListView: View {
     @EnvironmentObject private var session: SessionStorage
+    @EnvironmentObject private var globalSettings: GlobalSettings
     @Environment(\.dismiss) private var dismiss
     @Binding var navigationPath: [NavigationDestination]
     
     @StateObject private var viewModel = VideoListViewModel()
+    @State private var showSettings = false
 
     var body: some View {
         VStack {
@@ -65,6 +67,14 @@ struct VideoListView: View {
                         .foregroundColor(Color.dynamicColor(light: .black, dark: .white))
                 }
             }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showSettings = true }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(Color.dynamicColor(light: .black, dark: .white))
+                }
+            }
         }
         .navigationTitle("Media")
         .navigationBarBackButtonHidden(true) 
@@ -80,6 +90,11 @@ struct VideoListView: View {
         .fullScreenCover(item: $viewModel.selectedVideo) { video in
             VideoPlayerView(video: video, session: session)
                 .environmentObject(session)
+                .environmentObject(globalSettings)
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environmentObject(globalSettings)
         }
     }
 }
