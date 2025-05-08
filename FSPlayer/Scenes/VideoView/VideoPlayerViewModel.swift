@@ -51,7 +51,9 @@ final class VideoPlayerViewModel: ObservableObject {
 
         let asset  = AVURLAsset(url: url, options: options)
         let item   = AVPlayerItem(asset: asset)
+        item.preferredForwardBufferDuration = 1200
         let player = AVPlayer(playerItem: item)
+        player.automaticallyWaitsToMinimizeStalling = true
         player.allowsExternalPlayback = false
 
         // Restore playback position

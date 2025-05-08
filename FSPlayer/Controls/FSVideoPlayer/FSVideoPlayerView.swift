@@ -3,6 +3,7 @@
 //  FSPlayer
 //
 //  Created by Alexander Bralnin on 26.04.2025.
+//  Updated on 28.04.2025.
 //
 
 import SwiftUI
@@ -10,18 +11,20 @@ import AVKit
 
 struct FSVideoPlayerView: View {
     @StateObject private var viewModel: FSVideoPlayerViewModel
-
+    @StateObject private var sliderViewModel: FSVideoSliderViewModel
+    
     var onClose: (() -> Void)?
     var buttonColor: Color
-
+    
     @State private var isAspectFill = false
-
+    
     init(player: AVPlayer, buttonColor: Color = .white, onClose: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(player: player))
+        _sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(player: player))
         self.onClose = onClose
         self.buttonColor = buttonColor
     }
-
+    
     var body: some View {
         ZStack {
             FSVideoPlayerLayerView(player: viewModel.player)
@@ -29,18 +32,18 @@ struct FSVideoPlayerView: View {
                 .onChange(of: isAspectFill) { _, newValue in
                     viewModel.setAspectFill(newValue)
                 }
-
+            
             VStack {
                 topBar
                 Spacer()
-
+                
                 if viewModel.showControls {
                     controls
                 }
             }
         }
         .onTapGesture {
-            viewModel.toggleControls()
+            viewModel.interact()
         }
         .onAppear {
             viewModel.startPlaying()
@@ -49,9 +52,9 @@ struct FSVideoPlayerView: View {
             viewModel.cleanup()
         }
     }
-
+    
     // MARK: - Top Bar
-
+    
     private var topBar: some View {
         HStack {
             Button(action: {
@@ -64,9 +67,9 @@ struct FSVideoPlayerView: View {
                     .background(Color.black.opacity(0.6))
                     .clipShape(Circle())
             }
-
+            
             Spacer()
-
+            
             Button(action: {
                 isAspectFill.toggle()
             }) {
@@ -81,9 +84,9 @@ struct FSVideoPlayerView: View {
         .padding(.horizontal)
         .padding(.top, 20)
     }
-
+    
     // MARK: - Controls
-
+    
     private var controls: some View {
         VStack {
             Spacer()
@@ -93,22 +96,21 @@ struct FSVideoPlayerView: View {
             
             Spacer()
             
-            // Прогресс и временная информация
             progressControls
                 .padding(.horizontal)
         }
         .transition(.opacity)
         .padding()
     }
-
+    
     // MARK: - Control Buttons
     private var controlButtons: some View {
         HStack(spacing: 40) {
-            controlButton(
-                iconName: "gobackward.10",
-                size: 40,
-                action: viewModel.skipBackward
-            )
+             controlButton(
+             iconName: "gobackward.10",
+             size: 40,
+             action: sliderViewModel.skipBackward
+             )
             
             controlButton(
                 iconName: viewModel.isPlaying ? "pause.fill" : "play.fill",
@@ -116,14 +118,14 @@ struct FSVideoPlayerView: View {
                 action: viewModel.togglePlayPause
             )
             
-            controlButton(
-                iconName: "goforward.10",
-                size: 40,
-                action: viewModel.skipForward
-            )
+             controlButton(
+             iconName: "goforward.10",
+             size: 40,
+             action: sliderViewModel.skipForward
+             )
         }
     }
-
+    
     // MARK: - Control Button
     private func controlButton(iconName: String, size: CGFloat, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -135,44 +137,23 @@ struct FSVideoPlayerView: View {
                 .clipShape(Circle())
         }
     }
-
+    
     // MARK: - Progress Controls
     private var progressControls: some View {
         VStack {
-            Slider(
-                value: $viewModel.sliderValue,
-                in: 0...viewModel.duration,
-                onEditingChanged: { editing in
-                    if editing {
-                        viewModel.startSliderInteraction()
-                    } else {
-                        viewModel.updateSliderValue(viewModel.sliderValue)
-                        viewModel.endSliderInteraction()
+            FSVideoSlider(
+                viewModel: sliderViewModel,
+                isInteracting: Binding(
+                    get: { viewModel.isInteracting },
+                    set: { newValue in
+                        if newValue {
+                            viewModel.interact()
+                        } else {
+                            viewModel.endInteraction()
+                        }
                     }
-                }
+                )
             )
-            .accentColor(.red)
-            
-            timeLabels
         }
     }
-
-    // MARK: - Time Labels
-    private var timeLabels: some View {
-        HStack {
-            Text(viewModel.formattedTime(viewModel.currentTime))
-                .font(.caption)
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            Text(viewModel.formattedTime(viewModel.duration))
-                .font(.caption)
-                .foregroundColor(.white)
-        }
-    }
-}
-
-#Preview {
-    FSVideoPlayerView(player: AVPlayer())
 }
