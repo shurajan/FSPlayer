@@ -20,12 +20,24 @@ struct VideoItemView: View {
                     .font(.headline)
                     .lineLimit(1)
 
-                if let created = video.createdAt,
-                   let date = ISO8601DateFormatter().date(from: created) {
-                    Label(date.formatted(date: .numeric, time: .shortened), systemImage: "calendar")
+                HStack(alignment:.center, spacing: 12 ) {
+                    if let created = video.createdAt,
+                       let date = ISO8601DateFormatter().date(from: created) {
+                        Label(date.formatted(date: .numeric, time: .shortened), systemImage: "calendar")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    
+                    Label(PlaylistFormatters.formatDuration( video.playlists[0].duration), systemImage: "clock")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    
+                    Label(PlaylistFormatters.formatSize(video.playlists[0].sizeMB ?? 0), systemImage: "externaldrive")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
+                
             }
             .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
 
