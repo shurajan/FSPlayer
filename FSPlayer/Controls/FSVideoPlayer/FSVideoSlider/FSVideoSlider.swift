@@ -46,4 +46,5 @@ struct FSVideoSlider: View {
                 .foregroundColor(.white)
         }
     }
+    
 }

@@ -9,7 +9,7 @@
 import SwiftUI
 import AVKit
 
-struct FSVideoPlayerView: View {
+struct FSVideoPlayerView: View {    
     @StateObject private var viewModel: FSVideoPlayerViewModel
     @StateObject private var sliderViewModel: FSVideoSliderViewModel
     
