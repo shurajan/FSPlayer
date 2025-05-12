@@ -18,13 +18,13 @@ struct FSVideoSlider: View {
                 value: $viewModel.sliderValue,
                 in: 0...viewModel.duration,
                 onEditingChanged: { editing in
+                    isInteracting = editing
                     if editing {
                         viewModel.startSliderInteraction()
                     } else {
                         viewModel.updateSliderValue(viewModel.sliderValue)
                         viewModel.endSliderInteraction()
                     }
-                    isInteracting = editing
                 }
             )
             .accentColor(.red)

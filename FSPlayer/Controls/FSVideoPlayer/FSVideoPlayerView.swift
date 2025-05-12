@@ -108,20 +108,20 @@ struct FSVideoPlayerView: View {
         HStack(spacing: 40) {
              controlButton(
              iconName: "gobackward.10",
-             size: 40,
-             action: sliderViewModel.skipBackward
+             size: 50,
+             action: skipBackward
              )
             
             controlButton(
                 iconName: viewModel.isPlaying ? "pause.fill" : "play.fill",
                 size: 50,
-                action: viewModel.togglePlayPause
+                action: togglePlayPause
             )
             
              controlButton(
              iconName: "goforward.10",
-             size: 40,
-             action: sliderViewModel.skipForward
+             size: 50,
+             action: skipForward
              )
         }
     }
@@ -133,9 +133,27 @@ struct FSVideoPlayerView: View {
                 .font(.system(size: size))
                 .foregroundColor(buttonColor)
                 .padding()
-                .background(Color.black.opacity(0.6))
+                .background(Color.black.opacity(0.7))
                 .clipShape(Circle())
         }
+    }
+    
+    private func togglePlayPause() {
+        viewModel.interact()
+        viewModel.togglePlayPause()
+        viewModel.endInteraction()
+    }
+    
+    private func skipForward() {
+        viewModel.interact()
+        sliderViewModel.skipForward()
+        viewModel.endInteraction()
+    }
+    
+    private func skipBackward() {
+        viewModel.interact()
+        sliderViewModel.skipBackward()
+        viewModel.endInteraction()
     }
     
     // MARK: - Progress Controls
