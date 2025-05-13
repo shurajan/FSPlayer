@@ -16,7 +16,7 @@ final class VideoListViewModel: ObservableObject {
     @Published var sortOption: SortOption       = .name
     @Published var fileToDelete: VideoItemModel?      = nil
     @Published var showDeleteConfirmation       = false
-    @Published var selectedVideo: SelectedVideoItem? = nil
+    @Published var selectedVideo: VideoItemModel? = nil
 
     // MARK: ‑ Sorting
     enum SortOption: String, CaseIterable, Identifiable {
@@ -35,17 +35,16 @@ final class VideoListViewModel: ObservableObject {
 
         case .size:
             return videos.sorted {
-                ($0.playlists[0].sizeMB ?? 0) > ($1.playlists[0].sizeMB ?? 0)
+                ($0.sizeMB ?? 0) > ($1.sizeMB ?? 0)
             }
 
         case .duration:
             return videos.sorted {
-                $0.playlists[0].duration > $1.playlists[0].duration
+                $0.duration > $1.duration
             }
 
         case .createdAt:
             return videos.sorted {
-                // Сначала пытаемся парсить, потом сравниваем
                 let date0 = ISO8601DateFormatter().date(from: $0.createdAt ?? "") ?? .distantPast
                 let date1 = ISO8601DateFormatter().date(from: $1.createdAt ?? "") ?? .distantPast
                 return date0 > date1
@@ -55,7 +54,7 @@ final class VideoListViewModel: ObservableObject {
 
     // MARK: ‑ Public API (вызывается View)
 
-    func loadFiles(host: String, token: String) async {
+    func loadVideos(host: String, token: String) async {
         errorMessage = nil
         isLoading    = true
         defer { isLoading = false }

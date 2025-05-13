@@ -9,7 +9,7 @@ import SwiftUI
 import AVKit
 
 struct VideoPlayerView: View {
-    let selectedVideo: SelectedVideoItem
+    let selectedVideo: VideoItemModel
     
     @EnvironmentObject private var session: SessionStorage
     @EnvironmentObject private var globalSettings: GlobalSettings
@@ -19,7 +19,7 @@ struct VideoPlayerView: View {
     @State private var dragOffset: CGSize = .zero
     @GestureState private var isDragging = false
     
-    init(video: SelectedVideoItem, session: SessionStorage) {
+    init(video: VideoItemModel, session: SessionStorage) {
         self.selectedVideo = video
         _viewModel = StateObject(
             wrappedValue: VideoPlayerViewModel(selectedVideo: video, session: session)

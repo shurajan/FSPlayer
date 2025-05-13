@@ -117,11 +117,10 @@ private extension VideoListView {
             }
             .padding(.horizontal)
             
-            // Список видео
             List {
                 ForEach(viewModel.sortedFiles, id: \.id) { video in
-                    VideoItemView(video: video) { video, playlist in
-                        viewModel.selectedVideo = SelectedVideoItem(video: video, playlist: playlist)
+                    VideoItemView(video: video) { video in
+                        viewModel.selectedVideo = video
                     }
                     .swipeActions {
                         Button(role: .destructive) {
@@ -140,7 +139,7 @@ private extension VideoListView {
 
     func initialLoad() async {
         guard let host = session.host, let token = session.token else { return }
-        await viewModel.loadFiles(host: host, token: token)
+        await viewModel.loadVideos(host: host, token: token)
     }
     
     func refresh() async {
