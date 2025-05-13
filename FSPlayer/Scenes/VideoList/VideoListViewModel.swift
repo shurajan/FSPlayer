@@ -14,7 +14,7 @@ final class VideoListViewModel: ObservableObject {
     @Published var errorMessage: String?        = nil
     @Published var isLoading                    = false
     @Published var sortOption: SortOption       = .name
-    @Published var fileToDelete: VideoItemModel?      = nil
+    @Published var videoToDelete: VideoItemModel?      = nil
     @Published var showDeleteConfirmation       = false
     @Published var selectedVideo: VideoItemModel? = nil
 

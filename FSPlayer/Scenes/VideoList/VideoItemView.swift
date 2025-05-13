@@ -27,11 +27,11 @@ struct VideoItemView: View {
                     }
                     
                     
-                    Label(PlaylistFormatters.formatDuration( video.duration), systemImage: "clock")
+                    Label(video.formatDuration(), systemImage: "clock")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     
-                    Label(PlaylistFormatters.formatSize(video.sizeMB ?? 0), systemImage: "externaldrive")
+                    Label(video.formatSize(), systemImage: "externaldrive")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

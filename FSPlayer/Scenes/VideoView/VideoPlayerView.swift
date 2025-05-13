@@ -11,7 +11,7 @@ import AVKit
 struct VideoPlayerView: View {
     let selectedVideo: VideoItemModel
     
-    @EnvironmentObject private var session: SessionStorage
+    //@EnvironmentObject private var session: SessionStorage
     @EnvironmentObject private var globalSettings: GlobalSettings
     @Environment(\.dismiss) private var dismiss
     

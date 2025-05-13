@@ -78,7 +78,7 @@ struct VideoListView: View {
         }
         .navigationTitle("Media")
         .navigationBarBackButtonHidden(true) 
-        .alert("Delete Video?", isPresented: $viewModel.showDeleteConfirmation, presenting: viewModel.fileToDelete) { file in
+        .alert("Delete Video?", isPresented: $viewModel.showDeleteConfirmation, presenting: viewModel.videoToDelete) { file in
             Button("Delete", role: .destructive) {
                 Task { await delete(file) }
             }
@@ -89,7 +89,6 @@ struct VideoListView: View {
         .task { await initialLoad() }
         .fullScreenCover(item: $viewModel.selectedVideo) { video in
             VideoPlayerView(video: video, session: session)
-                .environmentObject(session)
                 .environmentObject(globalSettings)
         }
         .sheet(isPresented: $showSettings) {
@@ -124,7 +123,7 @@ private extension VideoListView {
                     }
                     .swipeActions {
                         Button(role: .destructive) {
-                            viewModel.fileToDelete = video
+                            viewModel.videoToDelete = video
                             viewModel.showDeleteConfirmation = true
                         } label: {
                             Label("Delete", systemImage: "trash")
