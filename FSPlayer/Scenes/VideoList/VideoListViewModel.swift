@@ -10,7 +10,7 @@ import SwiftUI
 @MainActor
 final class VideoListViewModel: ObservableObject {
 
-    @Published var videos: [VideoItemModel]            = []
+    @Published var videos: [VideoItemModel]     = []
     @Published var errorMessage: String?        = nil
     @Published var isLoading                    = false
     @Published var sortOption: SortOption       = .name

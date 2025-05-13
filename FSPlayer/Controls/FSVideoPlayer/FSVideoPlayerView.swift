@@ -9,7 +9,9 @@
 import SwiftUI
 import AVKit
 
-struct FSVideoPlayerView: View {    
+struct FSVideoPlayerView: View {
+    @Binding var seekTo: Double?
+    
     @StateObject private var viewModel: FSVideoPlayerViewModel
     @StateObject private var sliderViewModel: FSVideoSliderViewModel
     
@@ -18,11 +20,15 @@ struct FSVideoPlayerView: View {
     
     @State private var isAspectFill = false
     
-    init(player: AVPlayer, buttonColor: Color = .white, onClose: (() -> Void)? = nil) {
+    init(player: AVPlayer,
+         buttonColor: Color = .white,
+         seekTo: Binding<Double?> = .constant(nil),
+         onClose: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(player: player))
         _sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(player: player))
         self.onClose = onClose
         self.buttonColor = buttonColor
+        self._seekTo = seekTo
     }
     
     var body: some View {
@@ -50,6 +56,12 @@ struct FSVideoPlayerView: View {
         }
         .onDisappear {
             viewModel.cleanup()
+        }
+        .onChange(of: seekTo) { _, newValue in
+            if let time = newValue {
+                sliderViewModel.seekImmediately(to: time)
+                seekTo = nil
+            }
         }
     }
     
