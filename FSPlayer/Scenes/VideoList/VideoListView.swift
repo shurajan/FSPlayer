@@ -78,7 +78,7 @@ struct VideoListView: View {
         }
         .navigationTitle("Media")
         .navigationBarBackButtonHidden(true) 
-        .alert("Delete Video?", isPresented: $viewModel.showDeleteConfirmation, presenting: viewModel.fileToDelete) { file in
+        .alert("Delete Video?", isPresented: $viewModel.showDeleteConfirmation, presenting: viewModel.videoToDelete) { file in
             Button("Delete", role: .destructive) {
                 Task { await delete(file) }
             }
@@ -89,7 +89,6 @@ struct VideoListView: View {
         .task { await initialLoad() }
         .fullScreenCover(item: $viewModel.selectedVideo) { video in
             VideoPlayerView(video: video, session: session)
-                .environmentObject(session)
                 .environmentObject(globalSettings)
         }
         .sheet(isPresented: $showSettings) {
@@ -117,15 +116,14 @@ private extension VideoListView {
             }
             .padding(.horizontal)
             
-            // Список видео
             List {
                 ForEach(viewModel.sortedFiles, id: \.id) { video in
-                    VideoItemView(video: video) { video, playlist in
-                        viewModel.selectedVideo = SelectedVideoItem(video: video, playlist: playlist)
+                    VideoItemView(video: video) { video in
+                        viewModel.selectedVideo = video
                     }
                     .swipeActions {
                         Button(role: .destructive) {
-                            viewModel.fileToDelete = video
+                            viewModel.videoToDelete = video
                             viewModel.showDeleteConfirmation = true
                         } label: {
                             Label("Delete", systemImage: "trash")
@@ -140,7 +138,7 @@ private extension VideoListView {
 
     func initialLoad() async {
         guard let host = session.host, let token = session.token else { return }
-        await viewModel.loadFiles(host: host, token: token)
+        await viewModel.loadVideos(host: host, token: token)
     }
     
     func refresh() async {

@@ -82,7 +82,6 @@ final class KeyFrameService: KeyFrameServiceProtocol {
                     return .failure(KeyFrameServiceError.imageDecodeError(message: "Failed to decode image data"))
                 }
 
-                // Estimate cost as approximate byte size of image
                 let cost = data.count
                 cache.setObject(image, forKey: cacheKey, cost: cost)
                 return .success(image)

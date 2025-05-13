@@ -9,9 +9,7 @@ import SwiftUI
 
 struct VideoItemView: View {
     let video: VideoItemModel
-    let onSelect: (VideoItemModel, PlaylistItemModel) -> Void
-
-    @State private var selectedPlaylist: PlaylistItemModel?
+    let onSelect: (VideoItemModel) -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -29,11 +27,11 @@ struct VideoItemView: View {
                     }
                     
                     
-                    Label(PlaylistFormatters.formatDuration( video.playlists[0].duration), systemImage: "clock")
+                    Label(video.formatDuration(), systemImage: "clock")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     
-                    Label(PlaylistFormatters.formatSize(video.playlists[0].sizeMB ?? 0), systemImage: "externaldrive")
+                    Label(video.formatSize(), systemImage: "externaldrive")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -41,18 +39,10 @@ struct VideoItemView: View {
             }
             .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
 
-            PlaylistSelectorButton(
-                selected: $selectedPlaylist,
-                playlists: video.playlists
-            )
-            .font(.caption2)
-            .fixedSize()
-            .frame(minWidth: 250, alignment: .trailing)
+
 
             Button(action: {
-                if let selected = selectedPlaylist {
-                    onSelect(video, selected)
-                }
+                    onSelect(video)
             }) {
                 Image(systemName: "play.fill")
                     .resizable()
@@ -64,14 +54,11 @@ struct VideoItemView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(BorderlessButtonStyle())
-            .disabled(selectedPlaylist == nil)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
-        .onAppear {
-            selectedPlaylist = video.playlists.first
-        }
+    
     }
 }

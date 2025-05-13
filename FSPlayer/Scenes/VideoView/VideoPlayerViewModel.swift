@@ -16,12 +16,12 @@ final class VideoPlayerViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     // MARK: – Dependencies & state
-    private let selectedVideo: SelectedVideoItem
-    private unowned let session: SessionStorage
+    private let selectedVideo: VideoItemModel
+    private let session: SessionStorage
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: – Init
-    init(selectedVideo: SelectedVideoItem, session: SessionStorage) {
+    init(selectedVideo: VideoItemModel, session: SessionStorage) {
         self.selectedVideo = selectedVideo
         self.session = session
         configurePlayer()
@@ -36,10 +36,8 @@ final class VideoPlayerViewModel: ObservableObject {
             errorMessage = "Missing host or token"
             return
         }
-
-        let playlist = selectedVideo.hlsPathWithPlaylist()
         
-        let urlString = "http://\(host)\(playlist)"
+        let urlString = "http://\(host)\(selectedVideo.hlsURL)"
         guard let url = URL(string: urlString) else {
             errorMessage = "Invalid URL: \(urlString)"
             return
