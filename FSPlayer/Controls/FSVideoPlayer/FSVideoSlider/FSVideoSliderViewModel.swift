@@ -144,7 +144,6 @@ final class FSVideoSliderViewModel: ObservableObject {
             guard let self else { return }
             self.player.play()
 
-            // Остановим воспроизведение через ~100 мс, чтобы "показать" кадр
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 if self.isSeeking {
                     self.player.pause()

@@ -21,6 +21,8 @@ struct VideoPlayerView: View {
     @GestureState private var isDragging = false
     @State private var showKeyframes: Bool = false
 
+    @State private var keyframeInitialIndex: Int = 0
+
     init(video: VideoItemModel, session: SessionStorage) {
         self.selectedVideo = video
         _viewModel = StateObject(
@@ -41,26 +43,35 @@ struct VideoPlayerView: View {
                 view
             }
 
-            // Keyframe slider appears below player
             if showKeyframes,
                let keyframesURL = selectedVideo.keyframesURL {
                 LazyKeyframeSliderView(
                     segmentCount: selectedVideo.segmentCount ?? 0,
                     keyframesURL: keyframesURL,
-                    thumbnailHeight: 150
-                ) { index in
-                    guard let segmentDuration = selectedVideo.avgSegmentDuration else { return }
-
-                    let maxDuration = Double(selectedVideo.duration)
-                    let targetTime = Double(index) * segmentDuration
-                    seekToTime = min(targetTime, maxDuration)
-                }
+                    thumbnailHeight: 150,
+                    onTap: { index in
+                        guard let segmentDuration = selectedVideo.avgSegmentDuration else { return }
+                        let maxDuration = Double(selectedVideo.duration)
+                        let targetTime = Double(index) * segmentDuration
+                        seekToTime = min(targetTime, maxDuration)
+                    },
+                    initialIndex: keyframeInitialIndex
+                )
                 .environmentObject(session)
                 .frame(height: 150)
                 .transition(.move(edge: .bottom))
             }
         }
-        .ignoresSafeArea(edges: .horizontal) // сохраняем нижнюю safeArea
+        .ignoresSafeArea(edges: .horizontal)
+    }
+
+    private func updateInitialKeyframeIndex() {
+        guard let segmentDuration = selectedVideo.avgSegmentDuration,
+              let player = viewModel.player else { return }
+
+        let currentTime = player.currentTime().seconds
+        let index = max(0, Int(currentTime / segmentDuration))
+        keyframeInitialIndex = index//min(index, (selectedVideo.segmentCount ?? 1) - 1)
     }
 
     private var background: some View {
@@ -73,9 +84,13 @@ struct VideoPlayerView: View {
                 ) {
                     dismiss()
                 }
-                .ignoresSafeArea(edges: [.top]) // не перекрываем bottom
-                .onAppear { viewModel.play() }
-                .onDisappear { viewModel.cleanup() }
+                .ignoresSafeArea(edges: [.top])
+                .onAppear {
+                    viewModel.play()
+                }
+                .onDisappear {
+                    viewModel.cleanup()
+                }
             } else if let error = viewModel.errorMessage {
                 Text(error)
                     .padding()
@@ -96,6 +111,7 @@ struct VideoPlayerView: View {
             }
             .onEnded { gesture in
                 if gesture.translation.height < -100 {
+                    updateInitialKeyframeIndex()
                     showKeyframes = true
                 } else if gesture.translation.height > 100 {
                     showKeyframes = false
