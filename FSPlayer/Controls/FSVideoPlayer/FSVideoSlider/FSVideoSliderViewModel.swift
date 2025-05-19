@@ -10,10 +10,8 @@ import Combine
 
 @MainActor
 final class FSVideoSliderViewModel: ObservableObject {
-    // MARK: - Properties
-    let player: AVPlayer
+    let playerController: FSPlayerController
 
-    private var timeObserver: Any?
     private var cancellables = Set<AnyCancellable>()
     private var seekTimer: AnyCancellable?
     private var isJumping: Bool = false
@@ -22,12 +20,9 @@ final class FSVideoSliderViewModel: ObservableObject {
     @Published var duration: Double = 1
     @Published var sliderValue: Double = 0
     @Published var isSeeking = false
-    
 
-    // MARK: - Initialization
-
-    init(player: AVPlayer) {
-        self.player = player
+    init(playerController: FSPlayerController) {
+        self.playerController = playerController
         setupObservers()
     }
 
@@ -38,53 +33,39 @@ final class FSVideoSliderViewModel: ObservableObject {
     }
 
     private func setupObservers() {
-        timeObserver = player.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 0.25, preferredTimescale: 600),
-            queue: .main
-        ) { [weak self] time in
-            guard let self else { return }
-
-            Task { @MainActor in
+        playerController.$currentTime
+            .sink { [weak self] time in
+                guard let self else { return }
                 if !self.isSeeking {
-                    let seconds = time.seconds
-                    self.currentTime = seconds
-                    if isJumping {
-                        isJumping = false
+                    self.currentTime = time
+                    if self.isJumping {
+                        self.isJumping = false
                         return
                     }
-                    self.sliderValue = seconds
+                    self.sliderValue = time
                 }
             }
-        }
-
-        player.currentItem?.publisher(for: \.duration)
-            .sink { [weak self] duration in
-                guard let self else { return }
-                let seconds = duration.seconds
-                self.duration = (seconds.isFinite && !seconds.isNaN && seconds > 0) ? seconds : 1
-            }
             .store(in: &cancellables)
-        
+
+        playerController.$duration
+            .assign(to: &$duration)
+
         seekTimer = Timer
             .publish(every: 0.25, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                guard let self, isSeeking else { return }
+                guard let self, self.isSeeking else { return }
                 self.updateFrameDuringSeeking()
             }
-        
     }
 
     func seekImmediately(to time: Double) {
         Task { @MainActor in
-            let cmTime = CMTime(seconds: time, preferredTimescale: 600)
-            await player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+            playerController.seek(to: time)
             self.currentTime = time
             self.sliderValue = time
         }
     }
-
-    // MARK: - Slider Interaction
 
     func startSliderInteraction() {
         isSeeking = true
@@ -100,8 +81,6 @@ final class FSVideoSliderViewModel: ObservableObject {
         seekImmediately(to: clamped)
     }
 
-    // MARK: - Skip Controls
-
     func skipForward() {
         updateSliderValue(sliderValue + 10)
     }
@@ -111,11 +90,6 @@ final class FSVideoSliderViewModel: ObservableObject {
     }
 
     func cleanup() {
-        if let observer = timeObserver {
-            player.removeTimeObserver(observer)
-            timeObserver = nil
-        }
-        
         seekTimer?.cancel()
         seekTimer = nil
 
@@ -136,17 +110,15 @@ final class FSVideoSliderViewModel: ObservableObject {
             return String(format: "%d:%02d", minutes, seconds)
         }
     }
-    
-    private func updateFrameDuringSeeking() {
-        let time = CMTime(seconds: sliderValue, preferredTimescale: 600)
-        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
-            guard let self else { return }
-            self.player.play()
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if self.isSeeking {
-                    self.player.pause()
-                }
+    private func updateFrameDuringSeeking() {
+        let time = sliderValue
+        playerController.seek(to: time)
+        playerController.play()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if self.isSeeking {
+                self.playerController.pause()
             }
         }
     }

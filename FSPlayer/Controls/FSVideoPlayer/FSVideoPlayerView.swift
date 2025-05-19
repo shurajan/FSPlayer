@@ -11,7 +11,7 @@ import AVKit
 
 struct FSVideoPlayerView: View {
     @Binding var seekTo: Double?
-    
+
     @StateObject private var viewModel: FSVideoPlayerViewModel
     @StateObject private var sliderViewModel: FSVideoSliderViewModel
     
@@ -19,13 +19,15 @@ struct FSVideoPlayerView: View {
     var buttonColor: Color
     
     @State private var isAspectFill = false
+    private var controller: FSPlayerController
     
-    init(player: AVPlayer,
+    init(controller: FSPlayerController,
          buttonColor: Color = .white,
          seekTo: Binding<Double?> = .constant(nil),
          onClose: (() -> Void)? = nil) {
-        _viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(player: player))
-        _sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(player: player))
+        self.controller = controller
+        _viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(playerController: controller))
+        _sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(playerController: controller))
         self.onClose = onClose
         self.buttonColor = buttonColor
         self._seekTo = seekTo
@@ -33,7 +35,7 @@ struct FSVideoPlayerView: View {
     
     var body: some View {
         ZStack {
-            FSVideoPlayerLayerView(player: viewModel.player)
+            FSVideoPlayerLayerView(player: controller.player)
                 .ignoresSafeArea()
                 .onChange(of: isAspectFill) { _, newValue in
                     viewModel.setAspectFill(newValue)
@@ -56,6 +58,8 @@ struct FSVideoPlayerView: View {
         }
         .onDisappear {
             viewModel.cleanup()
+            controller.cleanup()
+            sliderViewModel.cleanup()
         }
         .onChange(of: seekTo) { _, newValue in
             if let time = newValue {
@@ -103,8 +107,10 @@ struct FSVideoPlayerView: View {
         VStack {
             Spacer()
             
-            controlButtons
-                .padding()
+            if !sliderViewModel.isSeeking {
+                controlButtons
+                    .padding()
+            }
             
             Spacer()
             
@@ -125,7 +131,7 @@ struct FSVideoPlayerView: View {
              )
             
             controlButton(
-                iconName: viewModel.isPlaying ? "pause.fill" : "play.fill",
+                iconName: controller.isPlaying ? "pause.fill" : "play.fill",
                 size: 50,
                 action: togglePlayPause
             )
@@ -152,7 +158,7 @@ struct FSVideoPlayerView: View {
     
     private func togglePlayPause() {
         viewModel.interact()
-        viewModel.togglePlayPause()
+        controller.togglePlayPause()
         viewModel.endInteraction()
     }
     

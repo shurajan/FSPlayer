@@ -13,6 +13,7 @@ import Combine
 final class VideoPlayerViewModel: ObservableObject {
     // MARK: – Published properties
     @Published private(set) var player: AVPlayer?
+    @Published var playerController: FSPlayerController?
     @Published var errorMessage: String?
 
     // MARK: – Dependencies & state
@@ -63,6 +64,7 @@ final class VideoPlayerViewModel: ObservableObject {
         }
 
         self.player = player
+        self.playerController = FSPlayerController(player: player)
 
         // Save position when paused
         player.publisher(for: \.timeControlStatus)
@@ -107,7 +109,7 @@ final class VideoPlayerViewModel: ObservableObject {
 
     // MARK: – Public controls
     func play() {
-        player?.play()
+        playerController?.play()
     }
 
     func cleanup() {

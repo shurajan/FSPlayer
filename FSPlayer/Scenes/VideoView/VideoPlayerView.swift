@@ -76,9 +76,9 @@ struct VideoPlayerView: View {
 
     private var background: some View {
         Group {
-            if let player = viewModel.player {
+            if let controller = viewModel.playerController {
                 FSVideoPlayerView(
-                    player: player,
+                    controller: controller,
                     buttonColor: Color.dynamicColor(light: .black, dark: .white),
                     seekTo: $seekToTime
                 ) {
