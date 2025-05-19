@@ -82,11 +82,10 @@ final class FSVideoPlayerViewModel: ObservableObject {
             for await isActive in await interactingController.interactingChanges {
                 await MainActor.run {
                     self.isInteracting = isActive
+                    self.showControls = true
                     if isActive {
                         self.timerService.stop()
-                        self.showControls = true
                     } else {
-                        self.showControls = true
                         self.timerService.start()
                     }
                 }

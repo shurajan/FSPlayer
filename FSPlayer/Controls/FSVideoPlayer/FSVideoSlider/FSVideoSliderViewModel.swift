@@ -69,8 +69,7 @@ final class FSVideoSliderViewModel: ObservableObject {
             .publish(every: 0.25, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                guard let self else { return }
-                guard isSeeking else { return }
+                guard let self, isSeeking else { return }
                 self.updateFrameDuringSeeking()
             }
         
