@@ -32,16 +32,10 @@ struct VideoPlayerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            let view = background
+            background
                 .gesture(revealKeyframeGesture)
                 .animation(.easeInOut(duration: 0.2), value: dragOffset)
                 .animation(.easeInOut(duration: 0.25), value: showKeyframes)
-
-            if globalSettings.isPerformanceOverlayEnabled {
-                view.performanceOverlay()
-            } else {
-                view
-            }
 
             if showKeyframes,
                let keyframesURL = selectedVideo.keyframesURL {
@@ -63,6 +57,7 @@ struct VideoPlayerView: View {
             }
         }
         .ignoresSafeArea(edges: .horizontal)
+        .withPerformanceOverlay()
     }
 
     private func updateInitialKeyframeIndex() {

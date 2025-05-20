@@ -76,7 +76,7 @@ struct VideoListView: View {
                 }
             }
         }
-        .navigationTitle("Media")
+        //.navigationTitle("Media List")
         .navigationBarBackButtonHidden(true) 
         .alert("Delete Video?", isPresented: $viewModel.showDeleteConfirmation, presenting: viewModel.videoToDelete) { file in
             Button("Delete", role: .destructive) {
@@ -118,7 +118,7 @@ private extension VideoListView {
             
             List {
                 ForEach(viewModel.sortedFiles, id: \.id) { video in
-                    VideoItemView(video: video) { video in
+                    VideoItemView(navigationPath: $navigationPath, video: video) { video in
                         viewModel.selectedVideo = video
                     }
                     .swipeActions {

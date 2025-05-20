@@ -11,6 +11,7 @@ struct VideoItemModel: Identifiable, Equatable, Codable {
     let name: String
     let hlsURL: String
     let keyframesURL: String?
+    let nsfwframesURL: String?
     let createdAt: String?
     let duration: Int
     let resolution: String?
@@ -23,6 +24,7 @@ struct VideoItemModel: Identifiable, Equatable, Codable {
         case name
         case hlsURL
         case keyframesURL
+        case nsfwframesURL
         case createdAt
         case duration
         case resolution
@@ -58,4 +60,14 @@ struct VideoItemModel: Identifiable, Equatable, Codable {
         }
     }
     
+}
+
+extension VideoItemModel: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: VideoItemModel, rhs: VideoItemModel) -> Bool {
+        lhs.id == rhs.id
+    }
 }

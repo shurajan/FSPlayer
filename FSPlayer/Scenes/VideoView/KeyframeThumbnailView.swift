@@ -46,7 +46,7 @@ struct KeyframeThumbnailView: View {
         }
 
         let path = "\(keyframesURL)\(index).jpg"
-        let result = await KeyFrameService.shared.fetchImage(from: path, host: host, token: token)
+        let result = await ImageService.shared.fetchImage(from: path, host: host, token: token)
 
         switch result {
         case .success(let img):
