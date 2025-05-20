@@ -128,6 +128,7 @@ private extension VideoListView {
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
+                        .tint(Color.dynamicColor(light: .red, dark: .pink))
                     }
                 }
             }

@@ -41,6 +41,6 @@ struct FSPlayerView: View {
                     }
                 }
         }
-        .tint(.white)
+        .tint(Color.dynamicColor(light: .black, dark: .white))
     }
 }
