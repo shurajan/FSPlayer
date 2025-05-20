@@ -7,9 +7,10 @@
 
 import SwiftUI
 
-enum NavigationDestination {
+enum NavigationDestination: Hashable {
     case login
     case videoList
+    case nsfw(VideoItemModel)
 }
 
 struct FSPlayerView: View {
@@ -19,7 +20,6 @@ struct FSPlayerView: View {
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            
             LoginView(navigationPath: $navigationPath)
                 .environmentObject(session)
                 .navigationDestination(for: NavigationDestination.self) { destination in
@@ -31,9 +31,11 @@ struct FSPlayerView: View {
                         VideoListView(navigationPath: $navigationPath)
                             .environmentObject(session)
                             .environmentObject(globalSettings)
+                    case .nsfw(let video):
+                        NsfwFramesView(video: video)
+                            .environmentObject(session)
                     }
                 }
         }
-        
     }
 }

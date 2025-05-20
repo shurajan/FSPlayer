@@ -118,7 +118,7 @@ private extension VideoListView {
             
             List {
                 ForEach(viewModel.sortedFiles, id: \.id) { video in
-                    VideoItemView(video: video) { video in
+                    VideoItemView(navigationPath: $navigationPath, video: video) { video in
                         viewModel.selectedVideo = video
                     }
                     .swipeActions {

@@ -6,25 +6,6 @@
 //
 import Foundation
 
-enum AuthError: LocalizedError {
-    case invalidPassword(message: String)
-    case networkError(message: String)
-    case invalidResponse(message: String)
-    case decodingError(message: String)
-    
-    var errorDescription: String? {
-        switch self {
-        case .invalidPassword(let message):
-            return message
-        case .networkError(let message):
-            return message
-        case .invalidResponse(let message):
-            return message
-        case .decodingError(let message):
-            return message
-        }
-    }
-}
 
 protocol AuthServiceProtocol {
     func login(host: String, password: String) async -> Result<String, Error>
@@ -46,13 +27,13 @@ final class AuthService: AuthServiceProtocol {
     
     func login(host: String, password: String) async -> Result<String, Error> {
         guard let url = URL(string: "http://\(host)/auth") else {
-            return .failure(AuthError.networkError(message: "Invalid URL"))
+            return .failure(NetworkServiceError.networkError(message: "Invalid URL"))
         }
         
         // Prepare request body
         let requestBody = ["password": password]
         guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
-            return .failure(AuthError.networkError(message: "Failed to serialize request body"))
+            return .failure(NetworkServiceError.networkError(message: "Failed to serialize request body"))
         }
         
         // Create network request
@@ -67,7 +48,7 @@ final class AuthService: AuthServiceProtocol {
             
             // Check HTTP response
             guard let httpResponse = response as? HTTPURLResponse else {
-                return .failure(AuthError.invalidResponse(message: "Invalid response format"))
+                return .failure(NetworkServiceError.invalidResponse(message: "Invalid response format"))
             }
             
             // Handle response based on status code
@@ -76,18 +57,18 @@ final class AuthService: AuthServiceProtocol {
                 if let authResponse = try? JSONDecoder().decode(AuthResponse.self, from: data) {
                     return .success(authResponse.token)
                 } else {
-                    return .failure(AuthError.decodingError(message: "Failed to decode successful response"))
+                    return .failure(NetworkServiceError.decodingError(message: "Failed to decode successful response"))
                 }
             } else {
                 // Try to decode error response
                 if let errorResponse = try? JSONDecoder().decode(AuthErrorResponse.self, from: data) {
-                    return .failure(AuthError.invalidPassword(message: errorResponse.error))
+                    return .failure(NetworkServiceError.invalidPassword(message: errorResponse.error))
                 } else {
-                    return .failure(AuthError.invalidResponse(message: "HTTP Error: \(httpResponse.statusCode)"))
+                    return .failure(NetworkServiceError.invalidResponse(message: "HTTP Error: \(httpResponse.statusCode)"))
                 }
             }
         } catch {
-            return .failure(AuthError.networkError(message: "Network request failed: \(error.localizedDescription)"))
+            return .failure(NetworkServiceError.networkError(message: "Network request failed: \(error.localizedDescription)"))
         }
     }
 }

@@ -6,33 +6,8 @@
 //
 
 import Foundation
-// MARK: - Error Handling
-
-enum VideoServiceError: LocalizedError {
-    case invalidToken(message: String)
-    case networkError(message: String)
-    case invalidResponse(message: String)
-    case decodingError(message: String)
-    case serverError(message: String)
-    
-    var errorDescription: String? {
-        switch self {
-        case .invalidToken(let message):
-            return message
-        case .networkError(let message):
-            return message
-        case .invalidResponse(let message):
-            return message
-        case .decodingError(let message):
-            return message
-        case .serverError(let message):
-            return message
-        }
-    }
-}
 
 // MARK: - Protocol
-
 protocol VideoServiceProtocol {
     func fetchFiles(host: String, token: String) async -> Result<[VideoItemModel], Error>
     func deleteFile(name: String, host: String, token: String) async -> Result<Void, Error>
@@ -47,11 +22,11 @@ final class VideoService: VideoServiceProtocol {
     
     func fetchFiles(host: String, token: String) async -> Result<[VideoItemModel], Error> {
         guard !token.isEmpty else {
-            return .failure(VideoServiceError.invalidToken(message: "Authorization token is empty"))
+            return .failure(NetworkServiceError.invalidToken(message: "Authorization token is empty"))
         }
         
         guard let url = URL(string: "http://\(host)/videos") else {
-            return .failure(VideoServiceError.networkError(message: "Invalid URL"))
+            return .failure(NetworkServiceError.networkError(message: "Invalid URL"))
         }
         
         // Create network request
@@ -66,7 +41,7 @@ final class VideoService: VideoServiceProtocol {
             
             // Check HTTP response
             guard let httpResponse = response as? HTTPURLResponse else {
-                return .failure(VideoServiceError.invalidResponse(message: "Invalid response format"))
+                return .failure(NetworkServiceError.invalidResponse(message: "Invalid response format"))
             }
             
             // Handle response based on status code
@@ -77,32 +52,32 @@ final class VideoService: VideoServiceProtocol {
                     let fileItems = try JSONDecoder().decode([VideoItemModel].self, from: data)
                     return .success(fileItems)
                 } catch {
-                    return .failure(VideoServiceError.decodingError(message: "Failed to decode file list: \(error.localizedDescription)"))
+                    return .failure(NetworkServiceError.decodingError(message: "Failed to decode file list: \(error.localizedDescription)"))
                 }
             case 401:
-                return .failure(VideoServiceError.invalidToken(message: "Authorization failed: Invalid or expired token"))
+                return .failure(NetworkServiceError.invalidToken(message: "Authorization failed: Invalid or expired token"))
             default:
                 // Try to decode error message if present
                 if let errorMessage = String(data: data, encoding: .utf8) {
-                    return .failure(VideoServiceError.serverError(message: "Server error (\(httpResponse.statusCode)): \(errorMessage)"))
+                    return .failure(NetworkServiceError.serverError(message: "Server error (\(httpResponse.statusCode)): \(errorMessage)"))
                 } else {
-                    return .failure(VideoServiceError.serverError(message: "Server error: HTTP \(httpResponse.statusCode)"))
+                    return .failure(NetworkServiceError.serverError(message: "Server error: HTTP \(httpResponse.statusCode)"))
                 }
             }
         } catch {
-            return .failure(VideoServiceError.networkError(message: "Network request failed: \(error.localizedDescription)"))
+            return .failure(NetworkServiceError.networkError(message: "Network request failed: \(error.localizedDescription)"))
         }
     }
     
     func deleteFile(name: String, host: String, token: String) async -> Result<Void, Error> {
         guard !token.isEmpty else {
-            return .failure(VideoServiceError.invalidToken(message: "Authorization token is empty"))
+            return .failure(NetworkServiceError.invalidToken(message: "Authorization token is empty"))
         }
 
         // URL-encode имя файла для безопасного использования в URL
         guard let encodedName = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
               let url = URL(string: "http://\(host)/videos/\(encodedName)") else {
-            return .failure(VideoServiceError.networkError(message: "Invalid URL for file: \(name)"))
+            return .failure(NetworkServiceError.networkError(message: "Invalid URL for file: \(name)"))
         }
 
         var request = URLRequest(url: url)
@@ -113,23 +88,23 @@ final class VideoService: VideoServiceProtocol {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
-                return .failure(VideoServiceError.invalidResponse(message: "Invalid response format"))
+                return .failure(NetworkServiceError.invalidResponse(message: "Invalid response format"))
             }
 
             switch httpResponse.statusCode {
             case 200:
                 return .success(())
             case 401:
-                return .failure(VideoServiceError.invalidToken(message: "Authorization failed: Invalid or expired token"))
+                return .failure(NetworkServiceError.invalidToken(message: "Authorization failed: Invalid or expired token"))
             default:
                 if let errorMessage = String(data: data, encoding: .utf8) {
-                    return .failure(VideoServiceError.serverError(message: "Server error (\(httpResponse.statusCode)): \(errorMessage)"))
+                    return .failure(NetworkServiceError.serverError(message: "Server error (\(httpResponse.statusCode)): \(errorMessage)"))
                 } else {
-                    return .failure(VideoServiceError.serverError(message: "Server error: HTTP \(httpResponse.statusCode)"))
+                    return .failure(NetworkServiceError.serverError(message: "Server error: HTTP \(httpResponse.statusCode)"))
                 }
             }
         } catch {
-            return .failure(VideoServiceError.networkError(message: "Network request failed: \(error.localizedDescription)"))
+            return .failure(NetworkServiceError.networkError(message: "Network request failed: \(error.localizedDescription)"))
         }
     }
     

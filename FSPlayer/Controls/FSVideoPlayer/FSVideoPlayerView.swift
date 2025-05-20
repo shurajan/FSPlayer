@@ -112,6 +112,7 @@ struct FSVideoPlayerView: View {
                     .padding()
             }
             
+            
             Spacer()
             
             progressControls
