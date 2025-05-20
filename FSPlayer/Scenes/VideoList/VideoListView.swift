@@ -76,7 +76,7 @@ struct VideoListView: View {
                 }
             }
         }
-        .navigationTitle("Media")
+        //.navigationTitle("Media List")
         .navigationBarBackButtonHidden(true) 
         .alert("Delete Video?", isPresented: $viewModel.showDeleteConfirmation, presenting: viewModel.videoToDelete) { file in
             Button("Delete", role: .destructive) {

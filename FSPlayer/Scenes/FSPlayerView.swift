@@ -11,6 +11,7 @@ enum NavigationDestination: Hashable {
     case login
     case videoList
     case nsfw(VideoItemModel)
+    case image(UIImage)
 }
 
 struct FSPlayerView: View {
@@ -32,10 +33,14 @@ struct FSPlayerView: View {
                             .environmentObject(session)
                             .environmentObject(globalSettings)
                     case .nsfw(let video):
-                        NsfwFramesView(video: video)
+                        NsfwFramesView(video: video, navigationPath: $navigationPath)
                             .environmentObject(session)
+                            .environmentObject(globalSettings)
+                    case .image(let image):
+                        ZoomableImageView(navigationPath: $navigationPath, image: image)
                     }
                 }
         }
+        .tint(.white)
     }
 }

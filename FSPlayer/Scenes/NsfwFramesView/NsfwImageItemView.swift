@@ -8,11 +8,11 @@ import SwiftUI
 
 struct NsfwImageItemView: View {
     let item: ImageItemModel
+    @Binding var navigationPath: [NavigationDestination]
 
     @EnvironmentObject private var session: SessionStorage
     @State private var image: UIImage?
     @State private var isLoading = true
-    @State private var isPreviewPresented = false
 
     var body: some View {
         VStack {
@@ -24,7 +24,7 @@ struct NsfwImageItemView: View {
                     .clipped()
                     .cornerRadius(8)
                     .onTapGesture {
-                        isPreviewPresented = true
+                        navigationPath.append(.image(image))
                     }
             } else if isLoading {
                 ProgressView()
@@ -44,10 +44,6 @@ struct NsfwImageItemView: View {
                 image = img
             }
         }
-        .fullScreenCover(isPresented: $isPreviewPresented) {
-            if let image {
-                ZoomableImageView(image: image)
-            }
-        }
+
     }
 }

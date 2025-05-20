@@ -9,11 +9,14 @@ import SwiftUI
 
 struct NsfwFramesView: View {
     @EnvironmentObject private var session: SessionStorage
+    @EnvironmentObject private var globalSettings: GlobalSettings
+    @Binding var navigationPath: [NavigationDestination]
     @StateObject private var viewModel: NsfwFramesViewModel
     @Environment(\.dismiss) private var dismiss
     
-    init(video: VideoItemModel) {
+    init(video: VideoItemModel, navigationPath: Binding<[NavigationDestination]>) {
         _viewModel = StateObject(wrappedValue: NsfwFramesViewModel(video: video))
+        _navigationPath = navigationPath
     }
     
     var body: some View {
@@ -29,7 +32,7 @@ struct NsfwFramesView: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 12) {
                         ForEach(viewModel.images) { imageItem in
-                            NsfwImageItemView(item: imageItem)
+                            NsfwImageItemView(item: imageItem, navigationPath: $navigationPath)
                         }
                     }
                     .padding()
@@ -38,14 +41,9 @@ struct NsfwFramesView: View {
         }
         .navigationTitle("NSFW Frames")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Back") { dismiss() }
-            }
-        }
         .task {
             await viewModel.load(host: session.host, token: session.token)
         }
-        
+        .withPerformanceOverlay()
     }
 }
