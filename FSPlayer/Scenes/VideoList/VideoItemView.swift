@@ -4,13 +4,13 @@
 //
 //  Created by Alexander Bralnin on 24.04.2025.
 //
-
 import SwiftUI
 
 struct VideoItemView: View {
     @Binding var navigationPath: [NavigationDestination]
     let video: VideoItemModel
     let onSelect: (VideoItemModel) -> Void
+    let onAnalyze: (VideoItemModel) -> Void // <- новая callback-функция
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -55,6 +55,20 @@ struct VideoItemView: View {
                 }
             }
             .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
+
+            Button(action: {
+                onAnalyze(video)
+            }) {
+                Image(systemName: "bolt.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                    .padding(16)
+                    .background(Color.orange.opacity(0.15))
+                    .foregroundColor(.orange)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(BorderlessButtonStyle())
 
             Button(action: {
                 onSelect(video)

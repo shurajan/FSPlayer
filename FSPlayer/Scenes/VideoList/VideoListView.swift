@@ -118,9 +118,17 @@ private extension VideoListView {
             
             List {
                 ForEach(viewModel.sortedFiles, id: \.id) { video in
-                    VideoItemView(navigationPath: $navigationPath, video: video) { video in
-                        viewModel.selectedVideo = video
-                    }
+                    VideoItemView(
+                        navigationPath: $navigationPath,
+                        video: video,
+                        onSelect: { selectedVideo in
+                            viewModel.selectedVideo = selectedVideo
+                        },
+                        onAnalyze: { selectedVideo in
+                            //viewModel.startAnalysis(for: selectedVideo)
+                            print("analyze")
+                        }
+                    )
                     .swipeActions {
                         Button(role: .destructive) {
                             viewModel.videoToDelete = video
