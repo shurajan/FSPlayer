@@ -125,8 +125,9 @@ private extension VideoListView {
                             viewModel.selectedVideo = selectedVideo
                         },
                         onAnalyze: { selectedVideo in
-                            //viewModel.startAnalysis(for: selectedVideo)
-                            print("analyze")
+                            if let host = session.host, let token = session.token {
+                                viewModel.startAnalysis(for: selectedVideo, host: host, token: token)
+                            }
                         }
                     )
                     .swipeActions {

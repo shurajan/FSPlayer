@@ -66,6 +66,12 @@ final class VideoListViewModel: ObservableObject {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? "Unknown error"
         }
     }
+    
+    func startAnalysis(for item: VideoItemModel, host: String, token: String) {
+        Task {
+            await AnalysisService.shared.start(name: item.name, host: host, token: token)
+        }
+    }
 
     func delete(_ file: VideoItemModel, host: String, token: String) async {
         switch await VideoService.shared.deleteFile(name: file.name, host: host, token: token) {
