@@ -1,15 +1,15 @@
 //
 //  FSVideoPlayerView.swift
-//  FSPlayer
-//
-//  Created by Alexander Bralnin on 26.04.2025.
-//  Updated on 28.04.2025.
+//  FSVideoPlayer
 //
 
 import SwiftUI
 import AVKit
 
 struct FSVideoPlayerView: View {
+    
+    // MARK: - Properties
+    
     @Binding var seekTo: Double?
 
     @StateObject private var viewModel: FSVideoPlayerViewModel
@@ -19,39 +19,37 @@ struct FSVideoPlayerView: View {
     var buttonColor: Color
     
     @State private var isAspectFill = false
-    private var controller: FSPlayerController
     
-    init(controller: FSPlayerController,
-         buttonColor: Color = .white,
-         seekTo: Binding<Double?> = .constant(nil),
-         onClose: (() -> Void)? = nil) {
+    private let controller: FSPlayerController
+    
+    // MARK: - Init
+    
+    init(
+        controller: FSPlayerController,
+        buttonColor: Color = .white,
+        seekTo: Binding<Double?> = .constant(nil),
+        onClose: (() -> Void)? = nil
+    ) {
         self.controller = controller
-        _viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(playerController: controller))
-        _sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(playerController: controller))
+        self._viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(playerController: controller))
+        self._sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(playerController: controller))
         self.onClose = onClose
         self.buttonColor = buttonColor
         self._seekTo = seekTo
     }
     
+    // MARK: - Body
+    
     var body: some View {
         ZStack {
-            FSVideoPlayerLayerView(player: controller.player)
-                .ignoresSafeArea()
-                .onChange(of: isAspectFill) { _, newValue in
-                    viewModel.setAspectFill(newValue)
-                }
+            videoLayer
             
-            VStack {
-                topBar
-                Spacer()
-                
-                if viewModel.showControls {
-                    controls
-                }
+            if viewModel.showControls {
+                controlsOverlay
             }
         }
         .onTapGesture {
-            viewModel.interact()
+            viewModel.toggleControlsVisibility()
         }
         .onAppear {
             viewModel.startPlaying()
@@ -69,13 +67,32 @@ struct FSVideoPlayerView: View {
         }
     }
     
+    // MARK: - Video Layer
+    
+    private var videoLayer: some View {
+        FSVideoPlayerLayerView(player: controller.player)
+            .ignoresSafeArea()
+            .onChange(of: isAspectFill) { _, newValue in
+                viewModel.setAspectFill(newValue)
+            }
+    }
+    
+    // MARK: - Controls Overlay
+    
+    private var controlsOverlay: some View {
+        VStack {
+            topBar
+            Spacer()
+            bottomControls
+        }
+        .transition(.opacity)
+    }
+    
     // MARK: - Top Bar
     
     private var topBar: some View {
         HStack {
-            Button(action: {
-                onClose?()
-            }) {
+            Button(action: { onClose?() }) {
                 Image(systemName: "xmark")
                     .font(.title2)
                     .foregroundColor(buttonColor)
@@ -86,10 +103,10 @@ struct FSVideoPlayerView: View {
             
             Spacer()
             
-            Button(action: {
-                isAspectFill.toggle()
-            }) {
-                Image(systemName: isAspectFill ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left")
+            Button(action: { isAspectFill.toggle() }) {
+                Image(systemName: isAspectFill 
+                      ? "arrow.up.left.and.arrow.down.right" 
+                      : "arrow.down.right.and.arrow.up.left")
                     .font(.title2)
                     .foregroundColor(buttonColor)
                     .padding(8)
@@ -101,51 +118,53 @@ struct FSVideoPlayerView: View {
         .padding(.top, 20)
     }
     
-    // MARK: - Controls
+    // MARK: - Bottom Controls
     
-    private var controls: some View {
-        VStack {
-            Spacer()
+    private var bottomControls: some View {
+        VStack(spacing: 16) {
+            // Slider
+            FSVideoSlider(
+                viewModel: sliderViewModel,
+                onInteractionStarted: {
+                    viewModel.sliderInteractionStarted()
+                },
+                onInteractionEnded: {
+                    viewModel.sliderInteractionEnded()
+                }
+            )
             
-            if !sliderViewModel.isSeeking {
-                controlButtons
-                    .padding()
-            }
-            
-            
-            Spacer()
-            
-            progressControls
-                .padding(.horizontal)
+            // Control Buttons (hidden but keep space when seeking)
+            controlButtons
+                .opacity(sliderViewModel.isSeeking ? 0 : 1)
         }
-        .transition(.opacity)
-        .padding()
+        .padding(.horizontal)
+        .padding(.bottom, 40)
     }
     
     // MARK: - Control Buttons
+    
     private var controlButtons: some View {
         HStack(spacing: 40) {
-             controlButton(
-             iconName: "gobackward.10",
-             size: 50,
-             action: skipBackward
-             )
+            controlButton(
+                iconName: "gobackward.10",
+                size: 36,
+                action: { viewModel.skipBackward(sliderViewModel: sliderViewModel) }
+            )
             
             controlButton(
                 iconName: controller.isPlaying ? "pause.fill" : "play.fill",
-                size: 50,
-                action: togglePlayPause
+                size: 44,
+                action: { viewModel.togglePlayPause() }
             )
             
-             controlButton(
-             iconName: "goforward.10",
-             size: 50,
-             action: skipForward
-             )
+            controlButton(
+                iconName: "goforward.10",
+                size: 36,
+                action: { viewModel.skipForward(sliderViewModel: sliderViewModel) }
+            )
         }
     }
     
-    // MARK: - Control Button
     private func controlButton(iconName: String, size: CGFloat, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: iconName)
@@ -154,43 +173,6 @@ struct FSVideoPlayerView: View {
                 .padding()
                 .background(Color.black.opacity(0.7))
                 .clipShape(Circle())
-        }
-    }
-    
-    private func togglePlayPause() {
-        viewModel.interact()
-        controller.togglePlayPause()
-        viewModel.endInteraction()
-    }
-    
-    private func skipForward() {
-        viewModel.interact()
-        sliderViewModel.skipForward()
-        viewModel.endInteraction()
-    }
-    
-    private func skipBackward() {
-        viewModel.interact()
-        sliderViewModel.skipBackward()
-        viewModel.endInteraction()
-    }
-    
-    // MARK: - Progress Controls
-    private var progressControls: some View {
-        VStack {
-            FSVideoSlider(
-                viewModel: sliderViewModel,
-                isInteracting: Binding(
-                    get: { viewModel.isInteracting },
-                    set: { newValue in
-                        if newValue {
-                            viewModel.interact()
-                        } else {
-                            viewModel.endInteraction()
-                        }
-                    }
-                )
-            )
         }
     }
 }

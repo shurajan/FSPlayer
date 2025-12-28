@@ -1,9 +1,6 @@
 //
 //  FSVideoPlayerViewModel.swift
-//  FSPlayer
-//
-//  Created by Alexander Bralnin on 26.04.2025.
-//  Updated on 28.04.2025.
+//  FSVideoPlayer
 //
 
 import SwiftUI
@@ -12,74 +9,86 @@ import Combine
 
 @MainActor
 final class FSVideoPlayerViewModel: ObservableObject {
+    
+    // MARK: - Timeouts Configuration
+    
+    enum HideTimeout: TimeInterval {
+        case playPause = 0.5
+        case interaction = 3.0
+    }
+    
+    // MARK: - Properties
+    
     let playerController: FSPlayerController
-    private var cachedPlayerLayer: AVPlayerLayer?
+    
+    @Published private(set) var isSliderInteracting = false
+    @Published var showControls = true
+    
     private var timerService = HideControlsTimerService()
-    private var cancellables = Set<AnyCancellable>()
-    private var interactingController = InteractingController()
-    private var interactingTask = SafeTask()
+    private var cachedPlayerLayer: AVPlayerLayer?
 
-    @Published private(set) var isInteracting = false
-    @Published var showControls = false
-
+    // MARK: - Init
+    
     init(playerController: FSPlayerController) {
         self.playerController = playerController
-        observeInteractingChanges()
-    }
-
-    deinit {
-        Task { @MainActor [weak self] in
-            self?.cleanup()
+        
+        timerService.configure { [weak self] in
+            self?.showControls = false
         }
     }
 
+    // MARK: - Player Control
+    
     func startPlaying() {
         playerController.play()
-        timerService.configure(timeout: 3) { [weak self] in
-            guard let self else { return }
-            if !self.isInteracting {
-                self.showControls = false
-            }
-        }
+        scheduleHide(after: .interaction)
     }
-
-
-    func interact() {
-        Task { [weak self] in
-            await self?.interactingController.startInteraction()
-        }
+    
+    func togglePlayPause() {
+        playerController.togglePlayPause()
+        scheduleHide(after: .playPause)
     }
-
-    func endInteraction() {
-        Task { [weak self] in
-            await self?.interactingController.endInteraction()
-        }
+    
+    // MARK: - Skip Controls
+    
+    func skipForward(sliderViewModel: FSVideoSliderViewModel) {
+        sliderViewModel.skipForward()
+        scheduleHide(after: .interaction)
     }
-
-    private func observeInteractingChanges() {
-        interactingTask.start { [weak self] in
-            guard let self else { return }
-            for await isActive in await interactingController.interactingChanges {
-                await MainActor.run {
-                    self.isInteracting = isActive
-                    self.showControls = true
-                    if isActive {
-                        self.timerService.stop()
-                    } else {
-                        self.timerService.start()
-                    }
-                }
-            }
-        }
+    
+    func skipBackward(sliderViewModel: FSVideoSliderViewModel) {
+        sliderViewModel.skipBackward()
+        scheduleHide(after: .interaction)
     }
-
-
-    func cleanup() {
-        interactingTask.cancel()
+    
+    // MARK: - Slider Interaction
+    
+    func sliderInteractionStarted() {
+        isSliderInteracting = true
         timerService.stop()
-        cachedPlayerLayer = nil
     }
-
+    
+    func sliderInteractionEnded() {
+        isSliderInteracting = false
+        scheduleHide(after: .interaction)
+    }
+    
+    // MARK: - Controls Visibility
+    
+    func toggleControlsVisibility() {
+        showControls = true
+        if !isSliderInteracting {
+            scheduleHide(after: .interaction)
+        }
+    }
+    
+    private func scheduleHide(after timeout: HideTimeout) {
+        showControls = true
+        timerService.start(timeout: timeout.rawValue)
+    }
+    
+    // MARK: - Aspect Ratio
+    
     func setAspectFill(_ fill: Bool) {
         if cachedPlayerLayer == nil || cachedPlayerLayer?.player !== playerController.player {
             cachedPlayerLayer = findPlayerLayer()
@@ -107,5 +116,12 @@ final class FSVideoPlayerViewModel: ObservableObject {
             }
         }
         return nil
+    }
+    
+    // MARK: - Cleanup
+    
+    func cleanup() {
+        timerService.stop()
+        cachedPlayerLayer = nil
     }
 }

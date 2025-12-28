@@ -1,8 +1,6 @@
 //
 //  FSPlayerController.swift
-//  FSPlayer
-//
-//  Created by Alexander Bralnin on 19.05.2025.
+//  FSVideoPlayer
 //
 
 import Foundation
@@ -17,7 +15,6 @@ final class FSPlayerController: ObservableObject {
     @Published private(set) var currentTime: Double = 0
     @Published private(set) var duration: Double = 1
 
-    // We'll use a different approach since nonisolated can't be used on mutable properties
     private var timeObserver: Any?
     private var cancellables = Set<AnyCancellable>()
 
@@ -64,20 +61,12 @@ final class FSPlayerController: ObservableObject {
             .store(in: &cancellables)
     }
 
-    // Add a cleanup method that should be called before deinit
-    func prepareForDeinit() {
-        if let observer = timeObserver {
-            player.removeTimeObserver(observer)
-            timeObserver = nil
-        }
-        cancellables.forEach { $0.cancel() }
-    }
-    
     func cleanup() {
         if let observer = timeObserver {
             player.removeTimeObserver(observer)
             timeObserver = nil
         }
         cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
     }
 }

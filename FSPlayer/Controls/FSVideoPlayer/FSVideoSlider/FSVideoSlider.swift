@@ -1,29 +1,30 @@
 //
-//  FSVideoPlayerSlider.swift
-//  FSPlayer
-//
-//  Created by Alexander Bralnin on 28.04.2025.
+//  FSVideoSlider.swift
+//  FSVideoPlayer
 //
 
 import SwiftUI
-import AVKit
 
 struct FSVideoSlider: View {
+    
     @ObservedObject var viewModel: FSVideoSliderViewModel
-    @Binding var isInteracting: Bool
+    
+    var onInteractionStarted: (() -> Void)?
+    var onInteractionEnded: (() -> Void)?
 
     var body: some View {
-        VStack {
+        VStack(spacing: 8) {
             Slider(
                 value: $viewModel.sliderValue,
                 in: 0...viewModel.duration,
                 onEditingChanged: { editing in
-                    isInteracting = editing
                     if editing {
                         viewModel.startSliderInteraction()
+                        onInteractionStarted?()
                     } else {
                         viewModel.updateSliderValue(viewModel.sliderValue)
                         viewModel.endSliderInteraction()
+                        onInteractionEnded?()
                     }
                 }
             )
@@ -46,5 +47,4 @@ struct FSVideoSlider: View {
                 .foregroundColor(.white)
         }
     }
-    
 }

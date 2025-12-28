@@ -1,49 +1,47 @@
 //
-//  FSVideoPlayerSliderViewModel.swift
-//  FSPlayer
+//  FSVideoSliderViewModel.swift
+//  FSVideoPlayer
 //
-//  Created by Alexander Bralnin on 28.04.2025.
-//
+
 import SwiftUI
 import AVFoundation
 import Combine
 
 @MainActor
 final class FSVideoSliderViewModel: ObservableObject {
+    
+    // MARK: - Properties
+    
     let playerController: FSPlayerController
-
-    private var cancellables = Set<AnyCancellable>()
-    private var seekTimer: AnyCancellable?
-    private var isJumping: Bool = false
 
     @Published var currentTime: Double = 0
     @Published var duration: Double = 1
     @Published var sliderValue: Double = 0
-    @Published var isSeeking = false
+    @Published private(set) var isSeeking = false
 
+    private var cancellables = Set<AnyCancellable>()
+    private var seekTimer: AnyCancellable?
+    private var isJumping = false
+
+    // MARK: - Init
+    
     init(playerController: FSPlayerController) {
         self.playerController = playerController
         setupObservers()
     }
 
-    deinit {
-        Task { @MainActor [weak self] in
-            self?.cleanup()
-        }
-    }
-
+    // MARK: - Setup
+    
     private func setupObservers() {
         playerController.$currentTime
             .sink { [weak self] time in
-                guard let self else { return }
-                if !self.isSeeking {
-                    self.currentTime = time
-                    if self.isJumping {
-                        self.isJumping = false
-                        return
-                    }
-                    self.sliderValue = time
+                guard let self, !self.isSeeking else { return }
+                self.currentTime = time
+                if self.isJumping {
+                    self.isJumping = false
+                    return
                 }
+                self.sliderValue = time
             }
             .store(in: &cancellables)
 
@@ -58,13 +56,14 @@ final class FSVideoSliderViewModel: ObservableObject {
                 self.updateFrameDuringSeeking()
             }
     }
-
+    
+    // MARK: - Seeking
+    
     func seekImmediately(to time: Double) {
-        Task { @MainActor in
-            playerController.seek(to: time)
-            self.currentTime = time
-            self.sliderValue = time
-        }
+        let clamped = max(0, min(time, duration))
+        playerController.seek(to: clamped)
+        currentTime = clamped
+        sliderValue = clamped
     }
 
     func startSliderInteraction() {
@@ -77,10 +76,11 @@ final class FSVideoSliderViewModel: ObservableObject {
     }
 
     func updateSliderValue(_ newValue: Double) {
-        let clamped = max(0, min(newValue, duration))
-        seekImmediately(to: clamped)
+        seekImmediately(to: newValue)
     }
-
+    
+    // MARK: - Skip
+    
     func skipForward() {
         updateSliderValue(sliderValue + 10)
     }
@@ -88,15 +88,9 @@ final class FSVideoSliderViewModel: ObservableObject {
     func skipBackward() {
         updateSliderValue(sliderValue - 10)
     }
-
-    func cleanup() {
-        seekTimer?.cancel()
-        seekTimer = nil
-
-        cancellables.forEach { $0.cancel() }
-        cancellables.removeAll()
-    }
-
+    
+    // MARK: - Time Formatting
+    
     func formattedTime(_ time: Double) -> String {
         let safeTime = time.isFinite && !time.isNaN ? time : 0
         let totalSeconds = Int(safeTime)
@@ -110,16 +104,25 @@ final class FSVideoSliderViewModel: ObservableObject {
             return String(format: "%d:%02d", minutes, seconds)
         }
     }
-
+    
+    // MARK: - Private
+    
     private func updateFrameDuringSeeking() {
-        let time = sliderValue
-        playerController.seek(to: time)
+        playerController.seek(to: sliderValue)
         playerController.play()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if self.isSeeking {
-                self.playerController.pause()
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self, self.isSeeking else { return }
+            self.playerController.pause()
         }
+    }
+
+    // MARK: - Cleanup
+    
+    func cleanup() {
+        seekTimer?.cancel()
+        seekTimer = nil
+        cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
     }
 }

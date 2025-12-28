@@ -1,33 +1,39 @@
 //
 //  FSVideoPlayerLayerView.swift
-//  FSPlayer
+//  FSVideoPlayer
 //
-//  Created by Alexander Bralnin on 26.04.2025.
-//
+
 import SwiftUI
-import AVKit
+import AVFoundation
 
 struct FSVideoPlayerLayerView: UIViewRepresentable {
     let player: AVPlayer
 
-    func makeUIView(context: Context) -> UIView {
-        let view = PlayerView()
-        view.player = player
-        return view
+    func makeUIView(context: Context) -> PlayerUIView {
+        PlayerUIView(player: player)
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    func updateUIView(_ uiView: PlayerUIView, context: Context) {
+        uiView.playerLayer.player = player
+    }
 
-    private class PlayerView: UIView {
-        override static var layerClass: AnyClass { AVPlayerLayer.self }
+    class PlayerUIView: UIView {
+        var playerLayer: AVPlayerLayer
 
-        private var playerLayer: AVPlayerLayer {
-            layer as! AVPlayerLayer
+        init(player: AVPlayer) {
+            playerLayer = AVPlayerLayer(player: player)
+            super.init(frame: .zero)
+            playerLayer.videoGravity = .resizeAspect
+            layer.addSublayer(playerLayer)
         }
 
-        var player: AVPlayer? {
-            get { playerLayer.player }
-            set { playerLayer.player = newValue }
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            playerLayer.frame = bounds
         }
     }
 }

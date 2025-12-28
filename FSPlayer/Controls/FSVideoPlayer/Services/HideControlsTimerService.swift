@@ -1,30 +1,28 @@
 //
 //  HideControlsTimerService.swift
-//  FSPlayer
-//
-//  Created by Alexander Bralnin on 28.04.2025.
+//  FSVideoPlayer
 //
 
 import SwiftUI
 
 @MainActor
-final class HideControlsTimerService: ObservableObject {
+final class HideControlsTimerService {
     private var timerTask: Task<Void, Never>?
-    private var timeout: Duration = .seconds(3)
     private var onTimeout: (() -> Void)?
 
-    func configure(timeout: TimeInterval, onTimeout: @escaping () -> Void) {
-        self.timeout = .seconds(timeout)
+    func configure(onTimeout: @escaping () -> Void) {
         self.onTimeout = onTimeout
     }
 
-    func start() {
+    func start(timeout: TimeInterval) {
         stop()
-        timerTask = Task { [timeout, onTimeout] in
+        timerTask = Task { [weak self, onTimeout] in
             do {
-                try await Task.sleep(for: timeout)
+                try await Task.sleep(for: .seconds(timeout))
+                guard let self, !Task.isCancelled else { return }
                 onTimeout?()
             } catch {
+                // Task was cancelled
             }
         }
     }
@@ -32,11 +30,5 @@ final class HideControlsTimerService: ObservableObject {
     func stop() {
         timerTask?.cancel()
         timerTask = nil
-    }
-
-    deinit {
-        Task { @MainActor [weak self] in
-            self?.stop()
-        }
     }
 }
