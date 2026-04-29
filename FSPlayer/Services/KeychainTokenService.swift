@@ -25,7 +25,7 @@ final class KeychainTokenService {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
             kSecAttrAccount as String: key,
-            kSecValueData as String: token.data(using: .utf8)!,
+            kSecValueData as String: token.data(using: .utf8) ?? Data(),
             kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
         ]
         
@@ -72,7 +72,7 @@ final class KeychainTokenService {
             ]
             
             let attributes: [String: Any] = [
-                kSecValueData as String: newToken.data(using: .utf8)!
+                kSecValueData as String: newToken.data(using: .utf8) ?? Data()
             ]
             
             let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)

@@ -66,7 +66,7 @@ struct VideoPlayerView: View {
 
         let currentTime = player.currentTime().seconds
         let index = max(0, Int(currentTime / segmentDuration))
-        keyframeInitialIndex = index//min(index, (selectedVideo.segmentCount ?? 1) - 1)
+        keyframeInitialIndex = min(index, max(0, (selectedVideo.segmentCount ?? 1) - 1))
     }
 
     private var background: some View {

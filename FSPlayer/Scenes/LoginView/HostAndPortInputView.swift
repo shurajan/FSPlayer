@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct HostAndPortInputView: View {
     @Binding private var combinedHost: String
 

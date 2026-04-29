@@ -111,7 +111,8 @@ final class FSVideoSliderViewModel: ObservableObject {
         playerController.seek(to: sliderValue)
         playerController.play()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(100))
             guard let self, self.isSeeking else { return }
             self.playerController.pause()
         }

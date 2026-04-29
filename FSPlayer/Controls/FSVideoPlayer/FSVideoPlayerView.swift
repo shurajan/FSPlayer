@@ -147,19 +147,19 @@ struct FSVideoPlayerView: View {
         HStack(spacing: 40) {
             controlButton(
                 iconName: "gobackward.10",
-                size: 36,
+                size: 40,
                 action: { viewModel.skipBackward(sliderViewModel: sliderViewModel) }
             )
             
             controlButton(
                 iconName: controller.isPlaying ? "pause.fill" : "play.fill",
-                size: 44,
+                size: 40,
                 action: { viewModel.togglePlayPause() }
             )
             
             controlButton(
                 iconName: "goforward.10",
-                size: 36,
+                size: 40,
                 action: { viewModel.skipForward(sliderViewModel: sliderViewModel) }
             )
         }

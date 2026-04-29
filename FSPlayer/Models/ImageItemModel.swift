@@ -8,7 +8,7 @@
 import Foundation
 
 struct ImageItemModel: Identifiable {
-    let id = UUID()
+    var id: String { urlPath }
     let filename: String
     let urlPath: String
 }

@@ -97,9 +97,7 @@ final class PerformanceMonitor: ObservableObject {
 
         guard let threadList else { return 0 }
 
-        DispatchQueue.main.async { [weak self] in
-            self?.threads = Int(threadCount)
-        }
+        threads = Int(threadCount)
 
         var totalUsageOfCPU = 0.0
 

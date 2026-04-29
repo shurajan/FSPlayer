@@ -64,7 +64,7 @@ final class UserDataStorageService {
     }
     
     func loadVideoPosition(for videoId: String) -> Double? {
-        return defaults.double(forKey: UserDefaultsKey.videoPosition.withVideoId(videoId))
+        return defaults.object(forKey: UserDefaultsKey.videoPosition.withVideoId(videoId)) as? Double
     }
     
     func clearVideoPosition(for videoId: String) {
