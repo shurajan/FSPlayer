@@ -25,6 +25,8 @@ final class PerformanceMonitor: ObservableObject {
 
     func start() {
         displayLink?.invalidate()
+        lastTimestamp = 0
+        frameCount = 0
 
         displayLink = CADisplayLink(target: self, selector: #selector(update))
         displayLink?.add(to: .main, forMode: .common)

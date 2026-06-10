@@ -52,6 +52,7 @@ final class KeychainTokenService {
         return nil
     }
     
+    @discardableResult
     func deleteToken(withKey key: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -61,25 +62,6 @@ final class KeychainTokenService {
         
         let status = SecItemDelete(query as CFDictionary)
         return status == errSecSuccess || status == errSecItemNotFound
-    }
-    
-    func updateToken(_ newToken: String, withKey key: String) -> Bool {
-        if loadToken(withKey: key) != nil {
-            let query: [String: Any] = [
-                kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: serviceName,
-                kSecAttrAccount as String: key
-            ]
-            
-            let attributes: [String: Any] = [
-                kSecValueData as String: newToken.data(using: .utf8) ?? Data()
-            ]
-            
-            let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-            return status == errSecSuccess
-        } else {
-            return saveToken(newToken, withKey: key)
-        }
     }
     
     // MARK: - Специфичные методы для API токена
@@ -92,6 +74,7 @@ final class KeychainTokenService {
         return loadToken(withKey: "apiToken")
     }
     
+    @discardableResult
     func deleteAPIToken() -> Bool {
         return deleteToken(withKey: "apiToken")
     }

@@ -66,9 +66,10 @@ final class VideoPlayerViewModel: ObservableObject {
         self.player = player
         self.playerController = FSPlayerController(player: player)
 
-        // Save position when paused
+        // Save position when paused (KVO may fire off the main thread)
         player.publisher(for: \.timeControlStatus)
             .filter { $0 == .paused }
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.saveCurrentPosition()
             }
@@ -79,6 +80,7 @@ final class VideoPlayerViewModel: ObservableObject {
             for: .AVPlayerItemDidPlayToEndTime,
             object: player.currentItem
         )
+        .receive(on: DispatchQueue.main)
         .sink { [weak self] _ in
             self?.resetPosition()
         }
@@ -108,10 +110,6 @@ final class VideoPlayerViewModel: ObservableObject {
     }
 
     // MARK: – Public controls
-    func play() {
-        playerController?.play()
-    }
-
     func cleanup() {
         player?.pause()
         cancellables.forEach { $0.cancel() }

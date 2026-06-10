@@ -10,29 +10,29 @@ struct VideoItemModel: Identifiable, Equatable, Codable {
     let id: String
     let name: String
     let hlsURL: String
-    let keyframesURL: String?
-    let nsfwframesURL: String?
     let createdAt: String?
     let duration: Int
     let resolution: String?
     let sizeMB: Int?
-    let segmentCount: Int?
-    let avgSegmentDuration: Double?
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case hlsURL
-        case keyframesURL
-        case nsfwframesURL
         case createdAt
         case duration
         case resolution
         case sizeMB
-        case segmentCount
-        case avgSegmentDuration
     }
     
+    // ISO8601DateFormatter is documented as thread-safe
+    private nonisolated(unsafe) static let iso8601Formatter = ISO8601DateFormatter()
+
+    var createdDate: Date? {
+        guard let createdAt else { return nil }
+        return Self.iso8601Formatter.date(from: createdAt)
+    }
+
     func formatDuration() -> String {
         let hours = duration / 3600
         let minutes = (duration % 3600) / 60

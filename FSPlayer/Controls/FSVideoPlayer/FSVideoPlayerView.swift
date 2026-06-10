@@ -7,172 +7,236 @@ import SwiftUI
 import AVKit
 
 struct FSVideoPlayerView: View {
-    
-    // MARK: - Properties
-    
-    @Binding var seekTo: Double?
 
-    @StateObject private var viewModel: FSVideoPlayerViewModel
-    @StateObject private var sliderViewModel: FSVideoSliderViewModel
-    
+    @ObservedObject var controller: FSPlayerController
     var onClose: (() -> Void)?
-    var buttonColor: Color
-    
+
+    @State private var showControls = true
+    @State private var isScrubbing = false
+    @State private var scrubTime: Double = 0
     @State private var isAspectFill = false
-    
-    private let controller: FSPlayerController
-    
-    // MARK: - Init
-    
+    @State private var interactionCount = 0
+
+    private let autoHideDelay: Duration = .seconds(3)
+
     init(
         controller: FSPlayerController,
-        buttonColor: Color = .white,
-        seekTo: Binding<Double?> = .constant(nil),
         onClose: (() -> Void)? = nil
     ) {
         self.controller = controller
-        self._viewModel = StateObject(wrappedValue: FSVideoPlayerViewModel(playerController: controller))
-        self._sliderViewModel = StateObject(wrappedValue: FSVideoSliderViewModel(playerController: controller))
         self.onClose = onClose
-        self.buttonColor = buttonColor
-        self._seekTo = seekTo
     }
-    
-    // MARK: - Body
-    
+
     var body: some View {
         ZStack {
-            videoLayer
-            
-            if viewModel.showControls {
+            Color.black
+                .ignoresSafeArea()
+
+            FSVideoPlayerLayerView(
+                player: controller.player,
+                videoGravity: isAspectFill ? .resizeAspectFill : .resizeAspect
+            )
+            .ignoresSafeArea()
+
+            if let error = controller.errorMessage {
+                errorOverlay(error)
+            } else if showControls {
                 controlsOverlay
+                    .transition(.opacity)
             }
         }
+        .contentShape(Rectangle())
         .onTapGesture {
-            viewModel.toggleControlsVisibility()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showControls.toggle()
+            }
+        }
+        .task(id: autoHideTrigger) {
+            guard showControls, controller.isPlaying, !isScrubbing else { return }
+            guard (try? await Task.sleep(for: autoHideDelay)) != nil else { return }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showControls = false
+            }
         }
         .onAppear {
-            viewModel.startPlaying()
+            controller.play()
         }
         .onDisappear {
-            viewModel.cleanup()
             controller.cleanup()
-            sliderViewModel.cleanup()
-        }
-        .onChange(of: seekTo) { _, newValue in
-            if let time = newValue {
-                sliderViewModel.seekImmediately(to: time)
-                seekTo = nil
-            }
         }
     }
-    
-    // MARK: - Video Layer
-    
-    private var videoLayer: some View {
-        FSVideoPlayerLayerView(player: controller.player)
-            .ignoresSafeArea()
-            .onChange(of: isAspectFill) { _, newValue in
-                viewModel.setAspectFill(newValue)
-            }
+
+    // Restarts the auto-hide countdown whenever visibility, playback,
+    // scrubbing state, or a button interaction changes.
+    private var autoHideTrigger: String {
+        "\(showControls)-\(controller.isPlaying)-\(isScrubbing)-\(interactionCount)"
     }
-    
+
+    private func registerInteraction() {
+        interactionCount += 1
+    }
+
     // MARK: - Controls Overlay
-    
+
     private var controlsOverlay: some View {
-        VStack {
-            topBar
-            Spacer()
-            bottomControls
+        ZStack {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+
+            VStack {
+                topBar
+                Spacer()
+                if !isScrubbing {
+                    centerControls
+                    Spacer()
+                }
+                bottomBar
+            }
         }
-        .transition(.opacity)
     }
-    
+
+    // MARK: - Error Overlay
+
+    private func errorOverlay(_ message: String) -> some View {
+        ZStack {
+            Color.black.opacity(0.6)
+                .ignoresSafeArea()
+
+            VStack {
+                HStack {
+                    overlayButton(icon: "xmark", size: 18) {
+                        onClose?()
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.yellow)
+
+                    Text(message)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                }
+
+                Spacer()
+            }
+        }
+    }
+
     // MARK: - Top Bar
-    
+
     private var topBar: some View {
         HStack {
-            Button(action: { onClose?() }) {
-                Image(systemName: "xmark")
-                    .font(.title2)
-                    .foregroundColor(buttonColor)
-                    .padding(8)
-                    .background(Color.black.opacity(0.6))
-                    .clipShape(Circle())
+            overlayButton(icon: "xmark", size: 18) {
+                onClose?()
             }
-            
+
             Spacer()
-            
-            Button(action: { isAspectFill.toggle() }) {
-                Image(systemName: isAspectFill 
-                      ? "arrow.up.left.and.arrow.down.right" 
-                      : "arrow.down.right.and.arrow.up.left")
-                    .font(.title2)
-                    .foregroundColor(buttonColor)
-                    .padding(8)
-                    .background(Color.black.opacity(0.6))
-                    .clipShape(Circle())
+
+            overlayButton(
+                icon: isAspectFill
+                    ? "arrow.down.right.and.arrow.up.left"
+                    : "arrow.up.left.and.arrow.down.right",
+                size: 18
+            ) {
+                isAspectFill.toggle()
+                registerInteraction()
             }
         }
-        .padding(.horizontal)
-        .padding(.top, 20)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
-    
-    // MARK: - Bottom Controls
-    
-    private var bottomControls: some View {
-        VStack(spacing: 16) {
-            // Slider
-            FSVideoSlider(
-                viewModel: sliderViewModel,
-                onInteractionStarted: {
-                    viewModel.sliderInteractionStarted()
+
+    // MARK: - Center Controls
+
+    private var centerControls: some View {
+        HStack(spacing: 64) {
+            overlayButton(icon: "gobackward.10", size: 32) {
+                controller.skip(by: -10)
+                registerInteraction()
+            }
+
+            overlayButton(icon: controller.isPlaying ? "pause.fill" : "play.fill", size: 48) {
+                controller.togglePlayPause()
+                registerInteraction()
+            }
+
+            overlayButton(icon: "goforward.10", size: 32) {
+                controller.skip(by: 10)
+                registerInteraction()
+            }
+        }
+    }
+
+    // MARK: - Bottom Bar
+
+    private var bottomBar: some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text("\(Self.formatTime(displayedTime)) / \(Self.formatTime(controller.duration))")
+                    .font(.footnote.monospacedDigit())
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+
+            FSVideoScrubber(
+                duration: controller.duration,
+                time: displayedTime,
+                onScrubStarted: {
+                    scrubTime = controller.currentTime
+                    isScrubbing = true
+                    controller.beginScrubbing()
                 },
-                onInteractionEnded: {
-                    viewModel.sliderInteractionEnded()
+                onScrubChanged: { time in
+                    scrubTime = time
+                    controller.scrub(to: time)
+                },
+                onScrubEnded: { time in
+                    controller.endScrubbing(at: time)
+                    isScrubbing = false
                 }
             )
-            
-            // Control Buttons (hidden but keep space when seeking)
-            controlButtons
-                .opacity(sliderViewModel.isSeeking ? 0 : 1)
+            .padding(.horizontal, 12)
         }
-        .padding(.horizontal)
-        .padding(.bottom, 40)
+        .padding(.bottom, 16)
     }
-    
-    // MARK: - Control Buttons
-    
-    private var controlButtons: some View {
-        HStack(spacing: 40) {
-            controlButton(
-                iconName: "gobackward.10",
-                size: 40,
-                action: { viewModel.skipBackward(sliderViewModel: sliderViewModel) }
-            )
-            
-            controlButton(
-                iconName: controller.isPlaying ? "pause.fill" : "play.fill",
-                size: 40,
-                action: { viewModel.togglePlayPause() }
-            )
-            
-            controlButton(
-                iconName: "goforward.10",
-                size: 40,
-                action: { viewModel.skipForward(sliderViewModel: sliderViewModel) }
-            )
-        }
+
+    private var displayedTime: Double {
+        isScrubbing ? scrubTime : controller.currentTime
     }
-    
-    private func controlButton(iconName: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+
+    // MARK: - Helpers
+
+    private func overlayButton(icon: String, size: CGFloat, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: iconName)
-                .font(.system(size: size))
-                .foregroundColor(buttonColor)
-                .padding()
-                .background(Color.black.opacity(0.7))
-                .clipShape(Circle())
+            Image(systemName: icon)
+                .font(.system(size: size, weight: .semibold))
+                .foregroundColor(.white)
+                .shadow(radius: 4)
+                .frame(width: size + 28, height: size + 28)
+                .contentShape(Circle())
+        }
+    }
+
+    static func formatTime(_ time: Double) -> String {
+        let safeTime = time.isFinite ? max(0, time) : 0
+        let totalSeconds = Int(safeTime)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%d:%02d", minutes, seconds)
         }
     }
 }

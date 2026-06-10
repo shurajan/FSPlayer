@@ -45,9 +45,7 @@ final class VideoListViewModel: ObservableObject {
 
         case .createdAt:
             return videos.sorted {
-                let date0 = ISO8601DateFormatter().date(from: $0.createdAt ?? "") ?? .distantPast
-                let date1 = ISO8601DateFormatter().date(from: $1.createdAt ?? "") ?? .distantPast
-                return date0 > date1
+                ($0.createdDate ?? .distantPast) > ($1.createdDate ?? .distantPast)
             }
         }
     }

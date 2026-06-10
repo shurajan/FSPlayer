@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct VideoItemView: View {
-    @Binding var navigationPath: [NavigationDestination]
     let video: VideoItemModel
     let onSelect: (VideoItemModel) -> Void
 
@@ -20,8 +19,7 @@ struct VideoItemView: View {
                     .lineLimit(1)
 
                 HStack(alignment: .center, spacing: 12) {
-                    if let created = video.createdAt,
-                       let date = ISO8601DateFormatter().date(from: created) {
+                    if let date = video.createdDate {
                         Label(date.formatted(date: .numeric, time: .shortened), systemImage: "calendar")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -34,24 +32,6 @@ struct VideoItemView: View {
                     Label(video.formatSize(), systemImage: "externaldrive")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-
-                    if video.nsfwframesURL != nil {
-                        Button(action: {
-                            navigationPath.append(.nsfw(video))
-                        }) {
-                            Text("NSFW")
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.red, lineWidth: 1)
-                                )
-                        }
-                        .background(Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
                 }
             }
             .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)

@@ -8,6 +8,7 @@ import AVFoundation
 
 struct FSVideoPlayerLayerView: UIViewRepresentable {
     let player: AVPlayer
+    var videoGravity: AVLayerVideoGravity = .resizeAspect
 
     func makeUIView(context: Context) -> PlayerUIView {
         PlayerUIView(player: player)
@@ -15,10 +16,13 @@ struct FSVideoPlayerLayerView: UIViewRepresentable {
 
     func updateUIView(_ uiView: PlayerUIView, context: Context) {
         uiView.playerLayer.player = player
+        if uiView.playerLayer.videoGravity != videoGravity {
+            uiView.playerLayer.videoGravity = videoGravity
+        }
     }
 
     class PlayerUIView: UIView {
-        var playerLayer: AVPlayerLayer
+        let playerLayer: AVPlayerLayer
 
         init(player: AVPlayer) {
             playerLayer = AVPlayerLayer(player: player)
@@ -33,7 +37,10 @@ struct FSVideoPlayerLayerView: UIViewRepresentable {
 
         override func layoutSubviews() {
             super.layoutSubviews()
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
             playerLayer.frame = bounds
+            CATransaction.commit()
         }
     }
 }

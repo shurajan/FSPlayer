@@ -57,6 +57,10 @@ struct HostAndPortInputView: View {
                     updateCombined()
                 }
         }
+        .onAppear {
+            // Keep the binding in sync with the default port shown in the UI
+            updateCombined()
+        }
     }
 
     private func updateCombined() {
