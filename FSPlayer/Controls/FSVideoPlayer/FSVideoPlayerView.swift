@@ -134,7 +134,7 @@ struct FSVideoPlayerView: View {
 
     private var topBar: some View {
         HStack {
-            overlayButton(icon: "xmark", size: 18) {
+            overlayButton(icon: "xmark", size: 25) {
                 onClose?()
             }
 
@@ -144,14 +144,14 @@ struct FSVideoPlayerView: View {
                 icon: isAspectFill
                     ? "arrow.down.right.and.arrow.up.left"
                     : "arrow.up.left.and.arrow.down.right",
-                size: 18
+                size: 25
             ) {
                 isAspectFill.toggle()
                 registerInteraction()
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.top, 16)
     }
 
     // MARK: - Center Controls
